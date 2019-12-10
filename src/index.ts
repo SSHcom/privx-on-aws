@@ -14,7 +14,19 @@
 //   limitations under the License.
 //
 import * as cdk from '@aws-cdk/core'
+import * as vault from './vault'
 
+//
+//
+export class Config extends cdk.Stack {
+  constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
+    super(scope, id, props)
+    vault.Secret(this)
+  }
+}
+
+//
+//
 export class Stack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
     super(scope, id, props)
@@ -22,5 +34,6 @@ export class Stack extends cdk.Stack {
 }
 
 const app = new cdk.App()
-new Stack(app, 'privx-on-aws', {})
+new Config(app, 'privx-config', {})
+new Stack(app, 'privx-service', {})
 app.synth()

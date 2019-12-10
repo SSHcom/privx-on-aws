@@ -23,8 +23,24 @@ PrivX is an ultimate replacement for jump hosts and bastions. It adds traceabili
 
 ## Getting Started
 
-tbd.
+This project implements an Infrastructure as a Code components for PrivX. It 100% automates PrivX deployment on Amazon Web Service. This section guides you about all steps required to launch PrivX in your AWS account. 
 
+The latest version of project is available at `master` branch of the repository. All development, including new features and bug fixes, take place on the `master` branch using forking and pull requests as described in contribution guidelines.
+
+A prior experience with monolithic AWS Cloud Formation has shown difficulties on maintainability. If the template spin off entire infrastructure: networking gears, load balancers, compute resources, service, etc then it might lead you to situation when updates are not applicable without a downtime. Therefore, We splits PrivX solution to few independent layers:
+* config layer prepares the AWS account and deploys backing services required for operations.
+* service layer deploys PrivX
+
+Deploy PrivX to AWS Account with following commands
+
+```bash
+npm install
+cdk deploy privx-service
+```
+
+## Next Steps
+
+tbd.
 
 ## How To Contribute
 
