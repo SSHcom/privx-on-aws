@@ -75,4 +75,4 @@ npm run lint
 
 ## License
 
-[![See LICENSE](https://img.shields.io/github/license/fogfish/aws-cdk-pure.svg?style=for-the-badge)](LICENSE)
+[![See LICENSE](https://img.shields.io/github/license/SSHcom/privx-on-aws.svg?style=for-the-badge)](LICENSE)
