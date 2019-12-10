@@ -1,0 +1,12 @@
+dist: bionic
+
+language: node_js
+node_js:
+  - 12
+  - 10
+
+script:
+  - npm install
+  - npm run build
+  - npm run coveralls
+  - npm run lint
