@@ -1,17 +1,27 @@
 import { expect, haveResource } from '@aws-cdk/assert'
 import * as cdk from '@aws-cdk/core'
-import { Config, Stack } from '../src/index'
+import { AwsRegionServices, Stack } from '../src/index'
 
+//
+//
 test('config spawns required resources', () => {
   const app = new cdk.App()
-  const stack = new Config(app, 'test-config', {})
+  const stack = new AwsRegionServices(app, 'test-config', {})
   const elements: string[] = [
     'AWS::SecretsManager::Secret',
+    'AWS::EC2::VPC',
+    'AWS::EC2::Subnet',
+    'AWS::EC2::RouteTable',
+    'AWS::EC2::SubnetRouteTableAssociation',
+    'AWS::EC2::Route',
+    'AWS::EC2::EIP',
+    'AWS::EC2::NatGateway', 
   ]
   elements.forEach(x => expect(stack).to(haveResource(x)))
 })
 
 test('stack spawns required resources', () => {
   const app = new cdk.App()
-  new Stack(app, 'test-stack', {})
+  const services = new AwsRegionServices(app, 'test-config', {})
+  new Stack(app, 'test-stack', { services })
 })

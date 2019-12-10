@@ -31,11 +31,12 @@ A prior experience with monolithic AWS Cloud Formation has shown difficulties on
 * config layer prepares the AWS account and deploys backing services required for operations.
 * service layer deploys PrivX
 
-Deploy PrivX to AWS Account with following commands
+Deploy PrivX to AWS Account with following commands. **Please note**, you have to specify few arguments:
+* `cidr` IPv4 CIDR block for the VPC, use class A network. The default value is '10.0.0.0/16'.
 
 ```bash
 npm install
-cdk deploy privx-service
+cdk deploy privx-service -c cidr=10.0.0.0/16
 ```
 
 ## Next Steps
