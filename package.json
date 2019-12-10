@@ -22,6 +22,6 @@
     "build": "tsc",
     "lint": "tslint -p tsconfig.json",
     "test": "jest --coverage",
-    "coveralls": "jest --coverage && cat ./tests/coverage/lcov.info | coveralls"
+    "coveralls": "jest --coverage && cat ./coverage/lcov.info | coveralls"
   }
 }
