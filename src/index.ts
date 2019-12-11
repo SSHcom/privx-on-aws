@@ -15,6 +15,7 @@
 //
 import * as ec2 from '@aws-cdk/aws-ec2'
 import * as cdk from '@aws-cdk/core'
+import * as storage from './storage'
 import * as vault from './vault'
 import * as vpc from './vpc'
 
@@ -22,19 +23,26 @@ import * as vpc from './vpc'
 // PrivX Backing Service 
 interface Services {
   readonly vpc: ec2.IVpc
+  readonly storageSg: ec2.ISecurityGroup
+  readonly db: {host: string, port: string}
 }
 
 //
 //
 export class AwsRegionServices extends cdk.Stack implements Services  {
   public readonly vpc: ec2.IVpc
+  public readonly storageSg: ec2.ISecurityGroup
+  public readonly db: {host: string, port: string}
 
   constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
     super(scope, id, props)
     const cidr = scope.node.tryGetContext('cidr') || '10.0.0.0/16'
 
-    vault.Secret(this)
+    const keys = vault.Secret(this)
     this.vpc = vpc.Silo(this, cidr)
+    this.storageSg = new ec2.SecurityGroup(this, 'StorageSg', { vpc: this.vpc })
+
+    storage.Db(this, this.vpc, this.storageSg, keys)
   }
 }
 
