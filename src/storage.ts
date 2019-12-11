@@ -1,4 +1,5 @@
 import * as ec2 from '@aws-cdk/aws-ec2'
+import * as cache from '@aws-cdk/aws-elasticache'
 import * as rds from '@aws-cdk/aws-rds'
 import * as vault from '@aws-cdk/aws-secretsmanager'
 import * as cdk from '@aws-cdk/core'
@@ -28,4 +29,23 @@ export const Db = (
     })
   )
   return db
+}
+
+export const Redis = (
+  scope: cdk.Construct,
+  vpc: ec2.IVpc,
+  sg: ec2.ISecurityGroup,
+): cache.CfnCacheCluster => {
+  const subnets = new cache.CfnSubnetGroup(scope, 'RedisNets', {
+    description: 'PrivX Private Subnets',
+    subnetIds: vpc.privateSubnets.map(x => x.subnetId)
+  })
+
+  return new cache.CfnCacheCluster(scope, 'Redis', {
+    cacheNodeType: 'cache.t3.small',
+    cacheSubnetGroupName: subnets.ref,
+    engine: 'redis',
+    numCacheNodes: 1,
+    vpcSecurityGroupIds: [sg.securityGroupId]
+  })
 }

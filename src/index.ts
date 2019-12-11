@@ -25,6 +25,7 @@ interface Services {
   readonly vpc: ec2.IVpc
   readonly storageSg: ec2.ISecurityGroup
   readonly db: {host: string, port: string}
+  readonly redis: {host: string, port: string}
 }
 
 //
@@ -33,16 +34,22 @@ export class AwsRegionServices extends cdk.Stack implements Services  {
   public readonly vpc: ec2.IVpc
   public readonly storageSg: ec2.ISecurityGroup
   public readonly db: {host: string, port: string}
+  public readonly redis: {host: string, port: string}
 
   constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
     super(scope, id, props)
     const cidr = scope.node.tryGetContext('cidr') || '10.0.0.0/16'
 
     const keys = vault.Secret(this)
+    
     this.vpc = vpc.Silo(this, cidr)
     this.storageSg = new ec2.SecurityGroup(this, 'StorageSg', { vpc: this.vpc })
 
-    storage.Db(this, this.vpc, this.storageSg, keys)
+    const db = storage.Db(this, this.vpc, this.storageSg, keys)
+    this.db = { host: db.dbInstanceEndpointAddress, port: db.dbInstanceEndpointPort }
+    
+    const redis = storage.Redis(this, this.vpc, this.storageSg)
+    this.redis = { host: redis.attrRedisEndpointAddress, port: redis.attrRedisEndpointPort}
   }
 }
 

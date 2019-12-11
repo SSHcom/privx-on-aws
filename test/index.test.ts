@@ -17,6 +17,8 @@ test('config spawns required resources', () => {
     'AWS::EC2::EIP',
     'AWS::EC2::NatGateway',
     'AWS::RDS::DBInstance',
+    'AWS::ElastiCache::SubnetGroup',
+    'AWS::ElastiCache::CacheCluster',
   ]
   elements.forEach(x => expect(stack).to(haveResource(x)))
 })
