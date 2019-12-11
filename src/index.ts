@@ -15,9 +15,9 @@
 //
 import * as ec2 from '@aws-cdk/aws-ec2'
 import * as cdk from '@aws-cdk/core'
+import * as net from './net'
 import * as storage from './storage'
 import * as vault from './vault'
-import * as vpc from './vpc'
 
 //
 // PrivX Backing Service 
@@ -42,7 +42,7 @@ export class AwsRegionServices extends cdk.Stack implements Services  {
 
     const keys = vault.Secret(this)
     
-    this.vpc = vpc.Silo(this, cidr)
+    this.vpc = net.Vpc(this, cidr)
     this.storageSg = new ec2.SecurityGroup(this, 'StorageSg', { vpc: this.vpc })
 
     const db = storage.Db(this, this.vpc, this.storageSg, keys)
