@@ -19,6 +19,8 @@ test('config spawns required resources', () => {
     'AWS::RDS::DBInstance',
     'AWS::ElastiCache::SubnetGroup',
     'AWS::ElastiCache::CacheCluster',
+    'AWS::EFS::FileSystem',
+    'AWS::EFS::MountTarget',
   ]
   elements.forEach(x => expect(stack).to(haveResource(x)))
 })

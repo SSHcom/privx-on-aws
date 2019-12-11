@@ -50,6 +50,8 @@ export class AwsRegionServices extends cdk.Stack implements Services  {
     
     const redis = storage.Redis(this, this.vpc, this.storageSg)
     this.redis = { host: redis.attrRedisEndpointAddress, port: redis.attrRedisEndpointPort}
+
+    storage.Efs(this, this.vpc, this.storageSg)
   }
 }
 

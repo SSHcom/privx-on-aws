@@ -1,4 +1,5 @@
 import * as ec2 from '@aws-cdk/aws-ec2'
+import * as efs from '@aws-cdk/aws-efs'
 import * as cache from '@aws-cdk/aws-elasticache'
 import * as rds from '@aws-cdk/aws-rds'
 import * as vault from '@aws-cdk/aws-secretsmanager'
@@ -48,4 +49,38 @@ export const Redis = (
     numCacheNodes: 1,
     vpcSecurityGroupIds: [sg.securityGroupId]
   })
+}
+
+export const Efs = (
+  scope: cdk.Construct,
+  vpc: ec2.IVpc,
+  sg: ec2.ISecurityGroup
+): efs.CfnFileSystem => {
+  const fs = new efs.CfnFileSystem(scope, 'Efs',
+    {
+      fileSystemTags: [{key: 'Name', value: `${scope.node.path}/efs`}]
+    }
+  )
+  // TODO: private subnets
+  vpc.publicSubnets.forEach(
+    (subnet, id) => 
+      new efs.CfnMountTarget(scope, `Mount${id}`,
+        {
+          fileSystemId: fs.ref,
+          securityGroups: [sg.securityGroupId],
+          subnetId: subnet.subnetId,
+        }
+      )
+  )
+  // https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html
+  sg.connections.allowInternally(
+    new ec2.Port({
+      fromPort: 2049,
+      protocol: ec2.Protocol.TCP,
+      stringRepresentation: 'NFS:2049',
+      toPort: 2049,
+    })
+  )
+
+  return fs
 }
