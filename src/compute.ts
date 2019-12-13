@@ -40,7 +40,7 @@ export const EC2 = (
   nodes.addSecurityGroup(services.storageSg)
 
   incident.fmap(incident.ServiceOverload(scope, nodes, 60), services.pubsub)
-  incident.fmap(incident.ServiceInDebt(scope, nodes, 100), services.pubsub)
+  incident.fmap(incident.ServiceInDebt(scope, nodes, 30), services.pubsub)
 
   return nodes
 }
