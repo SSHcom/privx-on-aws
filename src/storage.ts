@@ -7,17 +7,18 @@ import * as cdk from '@aws-cdk/core'
 
 export const Db = (
   scope: cdk.Construct,
+  databaseName: string,
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
   secret: vault.Secret
 ): rds.DatabaseInstance => {
   const db = new rds.DatabaseInstance(scope, 'Db', {
-    databaseName: 'privx',
+    databaseName,
     deletionProtection: false,
     engine: rds.DatabaseInstanceEngine.POSTGRES,
     instanceClass: new ec2.InstanceType('t3.small'),
     masterUserPassword: secret.secretValueFromJson('secret'),
-    masterUsername: 'privx',
+    masterUsername: databaseName,
     multiAz: false,
     vpc
   })
@@ -42,13 +43,25 @@ export const Redis = (
     subnetIds: vpc.privateSubnets.map(x => x.subnetId)
   })
 
-  return new cache.CfnCacheCluster(scope, 'Redis', {
+  const redis = new cache.CfnCacheCluster(scope, 'Redis', {
     cacheNodeType: 'cache.t3.small',
     cacheSubnetGroupName: subnets.ref,
     engine: 'redis',
     numCacheNodes: 1,
+    port: 6379,
     vpcSecurityGroupIds: [sg.securityGroupId]
   })
+
+  sg.connections.allowInternally(
+    new ec2.Port({
+      fromPort: 6379,
+      protocol: ec2.Protocol.TCP,
+      stringRepresentation: 'REDIS:6379',
+      toPort: 6379,
+    })
+  )
+
+  return redis
 }
 
 export const Efs = (
@@ -61,8 +74,7 @@ export const Efs = (
       fileSystemTags: [{key: 'Name', value: `${scope.node.path}/efs`}]
     }
   )
-  // TODO: private subnets
-  vpc.publicSubnets.forEach(
+  vpc.privateSubnets.forEach(
     (subnet, id) => 
       new efs.CfnMountTarget(scope, `Mount${id}`,
         {
