@@ -6,8 +6,10 @@ export const Secret = (scope: cdk.Construct): vault.Secret =>
     {
       description: 'PrivX root passwords',
       generateSecretString: {
+        excludeCharacters: '{}[]()#;*&!$/\\@"`,?.',
+        excludePunctuation: true,
         generateStringKey: 'secret',
-        passwordLength: 24,
+        passwordLength: 32,
         secretStringTemplate: JSON.stringify({ }),
       },
     }

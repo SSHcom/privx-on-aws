@@ -13,61 +13,17 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
-import * as ec2 from '@aws-cdk/aws-ec2'
 import * as cdk from '@aws-cdk/core'
-import * as net from './net'
-import * as storage from './storage'
-import * as vault from './vault'
-
-//
-// PrivX Backing Service 
-interface Services {
-  readonly vpc: ec2.IVpc
-  readonly storageSg: ec2.ISecurityGroup
-  readonly db: {host: string, port: string}
-  readonly redis: {host: string, port: string}
-}
-
-//
-//
-export class AwsRegionServices extends cdk.Stack implements Services  {
-  public readonly vpc: ec2.IVpc
-  public readonly storageSg: ec2.ISecurityGroup
-  public readonly db: {host: string, port: string}
-  public readonly redis: {host: string, port: string}
-
-  constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
-    super(scope, id, props)
-    const cidr = scope.node.tryGetContext('cidr') || '10.0.0.0/16'
-
-    const keys = vault.Secret(this)
-    
-    this.vpc = net.Vpc(this, cidr)
-    this.storageSg = new ec2.SecurityGroup(this, 'StorageSg', { vpc: this.vpc })
-
-    const db = storage.Db(this, this.vpc, this.storageSg, keys)
-    this.db = { host: db.dbInstanceEndpointAddress, port: db.dbInstanceEndpointPort }
-    
-    const redis = storage.Redis(this, this.vpc, this.storageSg)
-    this.redis = { host: redis.attrRedisEndpointAddress, port: redis.attrRedisEndpointPort}
-
-    storage.Efs(this, this.vpc, this.storageSg)
-  }
-}
-
-//
-//
-interface StackProps extends cdk.StackProps {
-  readonly services: Services
-}
-
-export class Stack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props: StackProps) {
-    super(scope, id, props)
-  }
-}
+import * as stack from './stack'
 
 const app = new cdk.App()
-const services = new AwsRegionServices(app, 'privx-config', {})
-new Stack(app, 'privx-service', { services })
+const spec = {
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  }
+}
+
+const services = new stack.AwsRegionServices(app, 'privx-config', spec)
+new stack.Service(app, 'privx-service', { services, ...spec })
 app.synth()

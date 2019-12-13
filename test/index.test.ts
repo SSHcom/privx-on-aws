@@ -1,6 +1,6 @@
 import { expect, haveResource } from '@aws-cdk/assert'
 import * as cdk from '@aws-cdk/core'
-import { AwsRegionServices, Stack } from '../src/index'
+import { AwsRegionServices, Service } from '../src/stack'
 
 //
 //
@@ -26,7 +26,10 @@ test('config spawns required resources', () => {
 })
 
 test('stack spawns required resources', () => {
-  const app = new cdk.App()
+  const app = new cdk.App({ context: { domain: 'example.com' }})
   const services = new AwsRegionServices(app, 'test-config', {})
-  new Stack(app, 'test-stack', { services })
+  new Service(app, 'test-stack', {
+    env: { account: '000000000000', region: 'us-east-1'},
+    services,
+  })
 })

@@ -3,4 +3,5 @@ cdk.out/
 coverage/
 src/*.js
 test/*.js
+cdk.context.json
 
