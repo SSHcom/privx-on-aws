@@ -1,7 +1,7 @@
 import * as ec2 from '@aws-cdk/aws-ec2'
 import * as cdk from '@aws-cdk/core'
 
-export const Silo = (scope: cdk.Construct, cidr: string): ec2.Vpc => {
+export const Vpc = (scope: cdk.Construct, cidr: string): ec2.Vpc => {
   if (!cidr.startsWith('10.') || !cidr.endsWith('/16')) {
     throw new Error('Please use class A network in VPC CIDR = 10.x.x.x/16.')
   }
