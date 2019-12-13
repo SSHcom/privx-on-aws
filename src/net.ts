@@ -105,6 +105,7 @@ export const Endpoint = (scope: cdk.Construct, vpc: ec2.IVpc, listener: alb.IApp
       unhealthyThresholdCount: 2,
     },
     port: 443,
+    stickinessCookieDuration: cdk.Duration.hours(24),
     targetType: alb.TargetType.INSTANCE,
     targets: [service],
     vpc,
