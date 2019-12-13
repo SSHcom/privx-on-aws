@@ -9,10 +9,8 @@ export const EC2 = (
   services: Services
 ): asg.AutoScalingGroup => {
   const nodes = new asg.AutoScalingGroup(scope, 'Nodes', {
-    // associatePublicIpAddress: true,
     desiredCapacity: 1,
     instanceType: new ec2.InstanceType('t3.small'),
-    keyName: 'dmitry.kolesnikov',
     machineImage: new ec2.AmazonLinuxImage({
       generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
     }),
@@ -20,8 +18,6 @@ export const EC2 = (
     minCapacity: 0,
     role: Role(scope, services),
     vpc: services.vpc,
-    // TODO: private subnets
-    // vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
     vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE },
   })
   nodes.addUserData(mount(services), bootstrap(services))
