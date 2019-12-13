@@ -19,7 +19,9 @@ import * as ec2 from '@aws-cdk/aws-ec2'
 import * as alb from '@aws-cdk/aws-elasticloadbalancingv2'
 import * as dns from '@aws-cdk/aws-route53'
 import * as target from '@aws-cdk/aws-route53-targets'
+import * as sns from '@aws-cdk/aws-sns'
 import * as cdk from '@aws-cdk/core'
+import * as incident from './incident'
 
 //
 //
@@ -109,7 +111,13 @@ const None = (scope: cdk.Construct, vpc: ec2.IVpc, port: number): alb.Applicatio
     vpc,
   })
 
-export const Endpoint = (scope: cdk.Construct, vpc: ec2.IVpc, listener: alb.IApplicationListener, service: asg.AutoScalingGroup): alb.ApplicationListenerRule => {
+export const Endpoint = (
+  scope: cdk.Construct,
+  vpc: ec2.IVpc,
+  listener: alb.IApplicationListener,
+  service: asg.AutoScalingGroup,
+  topic: sns.ITopic,
+): alb.ApplicationListenerRule => {
   const endpoint = new alb.ApplicationTargetGroup(scope, 'Ep', {
     healthCheck: {
       healthyHttpCodes: '200',
@@ -132,6 +140,9 @@ export const Endpoint = (scope: cdk.Construct, vpc: ec2.IVpc, listener: alb.IApp
     priority: Math.floor(Math.random() * 999),
     targetGroups: [endpoint]
   })
+
+  incident.fmap(incident.HighAvailability(scope, endpoint,  1), topic)
+  incident.fmap(incident.ServiceAvailability(scope, endpoint, 20), topic)
 
   return lb
 }

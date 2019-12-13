@@ -14,6 +14,7 @@
 //   limitations under the License.
 //
 import * as ec2 from '@aws-cdk/aws-ec2'
+import * as sns from '@aws-cdk/aws-sns'
 
 export interface Services {
   readonly id: string
@@ -23,4 +24,5 @@ export interface Services {
   readonly redis: {host: string, port: string}
   readonly fs: string
   readonly vault: string
+  readonly pubsub: sns.ITopic
 }

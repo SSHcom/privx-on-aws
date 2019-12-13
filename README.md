@@ -31,6 +31,7 @@ We are using [AWS CDK](https://github.com/aws/aws-cdk) and [TypeScript](https://
 - [x] install dependencies
 - [x] Obtain `subdomain`, `domain` name(s) and [configure AWS Route53 HostedZone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html)
 - [x] Allocate unique class A network `cidr` block for AWS VPC
+- [x] Email address to send CloudWatch alerts
 
 ```bash
 ##
@@ -45,7 +46,8 @@ npm install
 cdk deploy privx-service \
   -c cidr=10.0.0.0/16 \
   -c subdomain=privx \
-  -c domain=example.com
+  -c domain=example.com \
+  -c email=my.email@company.com
 ```
 
 In few minutes, your own instance of PrivX solution is available. Open a Web browser with your fully qualified domain name, e.g. `https://privx.example.com`.

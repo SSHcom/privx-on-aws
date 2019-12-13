@@ -18,6 +18,7 @@ import * as ec2 from '@aws-cdk/aws-ec2'
 import * as iam from '@aws-cdk/aws-iam'
 import * as cdk from '@aws-cdk/core'
 import { Services } from './config'
+import * as incident from './incident'
 
 export const EC2 = (
   scope: cdk.Construct,
@@ -37,6 +38,9 @@ export const EC2 = (
   })
   nodes.addUserData(mount(services), bootstrap(services))
   nodes.addSecurityGroup(services.storageSg)
+
+  incident.fmap(incident.ServiceOverload(scope, nodes, 60), services.pubsub)
+  incident.fmap(incident.ServiceInDebt(scope, nodes, 100), services.pubsub)
 
   return nodes
 }
