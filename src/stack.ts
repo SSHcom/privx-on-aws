@@ -34,7 +34,7 @@ export class AwsRegionServices extends cdk.Stack implements Services  {
 
   constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
     super(scope, id, props)
-    this.id = scope.node.tryGetContext('id') || 'privx'
+    this.id = scope.node.tryGetContext('subdomain') || 'privx'
     const cidr = scope.node.tryGetContext('cidr') || '10.0.0.0/16'
 
     const secret = vault.Secret(this)
@@ -65,7 +65,7 @@ export class Service extends cdk.Stack {
     super(scope, id, props)
     const domain = scope.node.tryGetContext('domain')
     const nodes = compute.EC2(this, props.services)
-    const lb = net.PublicHttps(this, props.services.vpc, 'privx', domain)
+    const lb = net.PublicHttps(this, props.services.vpc, props.services.id, domain)
     net.Endpoint(this, props.services.vpc, lb, nodes)
   }
 }
