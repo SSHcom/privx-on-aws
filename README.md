@@ -1,6 +1,6 @@
 # PrivX on AWS
 
-PrivX is lean privileged access management solution for your On-Prem, AWS, Azure and GCP infrastructure, all in one multi-cloud solution. This project simplifies on-boarding PrivX experience with deployment automation using Infrastructure as a Code.
+PrivX is lean privileged access management solution for your On-Prem, AWS, Azure and GCP infrastructure, all in one multi-cloud solution. This project simplifies PrivX on-boarding experience with deployment automation using Infrastructure as a Code.
 
 [![Build Status](https://secure.travis-ci.org/SSHcom/privx-on-aws.svg?branch=master)](http://travis-ci.org/SSHcom/privx-on-aws)
 [![Coverage Status](https://coveralls.io/repos/github/SSHcom/privx-on-aws/badge.svg?branch=master)](https://coveralls.io/github/SSHcom/privx-on-aws?branch=master)
@@ -63,7 +63,10 @@ In the final step, please obtain a [**license code**](https://info.ssh.com/privx
 
 ## Next Steps
 
-tbd.
+* [Getting Started with PrivX](https://help.ssh.com/support/solutions/articles/36000194728-getting-started-with-privx)
+* Learn more about [PrivX Users and Permissions](https://help.ssh.com/support/solutions/articles/36000194730-privx-users-and-permissions)
+* Check [Online Administrator Manual](https://help.ssh.com/support/solutions/folders/36000185818)
+
 
 ## How To Contribute
 

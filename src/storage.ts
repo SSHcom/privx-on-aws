@@ -49,7 +49,7 @@ export const Db = (
     })
   )
   incident.fmap(incident.DbOverload(scope, db, 60), topic)
-  incident.fmap(incident.DbInDebt(scope, db, 100), topic)
+  incident.fmap(incident.DbInDebt(scope, db, 10), topic)
   incident.fmap(incident.DbOutOfDisk(scope, db, 10 * 1024 * 1024 * 1024), topic)
   incident.fmap(incident.DbOutOfMem(scope, db, 50 * 1024 * 1024), topic)
   incident.fmap(incident.DbStorageInDebt(scope, db, 25), topic)
