@@ -36,6 +36,8 @@ test('config spawns required resources', () => {
     'AWS::ElastiCache::CacheCluster',
     'AWS::EFS::FileSystem',
     'AWS::EFS::MountTarget',
+    'AWS::SNS::Topic',
+    'AWS::CloudWatch::Alarm',
   ]
   elements.forEach(x => expect(stack).to(haveResource(x)))
 })
@@ -59,6 +61,7 @@ test('stack spawns required resources', () => {
     'AWS::ElasticLoadBalancingV2::LoadBalancer',
     'AWS::ElasticLoadBalancingV2::Listener',
     'AWS::AutoScaling::AutoScalingGroup',
+    'AWS::CloudWatch::Alarm',
   ]
   elements.forEach(x => expect(stack).to(haveResource(x)))
 })

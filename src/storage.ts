@@ -18,14 +18,17 @@ import * as efs from '@aws-cdk/aws-efs'
 import * as cache from '@aws-cdk/aws-elasticache'
 import * as rds from '@aws-cdk/aws-rds'
 import * as vault from '@aws-cdk/aws-secretsmanager'
+import * as sns from '@aws-cdk/aws-sns'
 import * as cdk from '@aws-cdk/core'
+import * as incident from './incident'
 
 export const Db = (
   scope: cdk.Construct,
   databaseName: string,
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
-  secret: vault.Secret
+  secret: vault.Secret,
+  topic: sns.ITopic,
 ): rds.DatabaseInstance => {
   const db = new rds.DatabaseInstance(scope, 'Db', {
     databaseName,
@@ -45,6 +48,11 @@ export const Db = (
       toPort: db.instanceEndpoint.port,
     })
   )
+  incident.fmap(incident.DbOverload(scope, db, 60), topic)
+  incident.fmap(incident.DbInDebt(scope, db, 10), topic)
+  incident.fmap(incident.DbOutOfDisk(scope, db, 10 * 1024 * 1024 * 1024), topic)
+  incident.fmap(incident.DbOutOfMem(scope, db, 50 * 1024 * 1024), topic)
+  incident.fmap(incident.DbStorageInDebt(scope, db, 25), topic)
   return db
 }
 

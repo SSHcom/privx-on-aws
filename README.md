@@ -1,6 +1,6 @@
 # PrivX on AWS
 
-PrivX is lean privileged access management solution for your On-Prem, AWS, Azure and GCP infrastructure, all in one multi-cloud solution. This project simplifies on-boarding PrivX experience with deployment automation using Infrastructure as a Code.
+PrivX is lean privileged access management solution for your On-Prem, AWS, Azure and GCP infrastructure, all in one multi-cloud solution. This project simplifies PrivX on-boarding experience with deployment automation using Infrastructure as a Code.
 
 [![Build Status](https://secure.travis-ci.org/SSHcom/privx-on-aws.svg?branch=master)](http://travis-ci.org/SSHcom/privx-on-aws)
 [![Coverage Status](https://coveralls.io/repos/github/SSHcom/privx-on-aws/badge.svg?branch=master)](https://coveralls.io/github/SSHcom/privx-on-aws?branch=master)
@@ -31,6 +31,7 @@ We are using [AWS CDK](https://github.com/aws/aws-cdk) and [TypeScript](https://
 - [x] install dependencies
 - [x] Obtain `subdomain`, `domain` name(s) and [configure AWS Route53 HostedZone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html)
 - [x] Allocate unique class A network `cidr` block for AWS VPC
+- [x] Email address to send CloudWatch alerts
 
 ```bash
 ##
@@ -45,7 +46,8 @@ npm install
 cdk deploy privx-service \
   -c cidr=10.0.0.0/16 \
   -c subdomain=privx \
-  -c domain=example.com
+  -c domain=example.com \
+  -c email=my.email@company.com
 ```
 
 In few minutes, your own instance of PrivX solution is available. Open a Web browser with your fully qualified domain name, e.g. `https://privx.example.com`.
@@ -61,7 +63,10 @@ In the final step, please obtain a [**license code**](https://info.ssh.com/privx
 
 ## Next Steps
 
-tbd.
+* [Getting Started with PrivX](https://help.ssh.com/support/solutions/articles/36000194728-getting-started-with-privx)
+* Learn more about [PrivX Users and Permissions](https://help.ssh.com/support/solutions/articles/36000194730-privx-users-and-permissions)
+* Check [Online Administrator Manual](https://help.ssh.com/support/solutions/folders/36000185818)
+
 
 ## How To Contribute
 

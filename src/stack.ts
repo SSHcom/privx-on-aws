@@ -14,9 +14,11 @@
 //   limitations under the License.
 //
 import * as ec2 from '@aws-cdk/aws-ec2'
+import * as sns from '@aws-cdk/aws-sns'
 import * as cdk from '@aws-cdk/core'
 import * as compute from './compute'
 import { Services } from './config'
+import * as incident from './incident'
 import * as net from './net'
 import * as storage from './storage'
 import * as vault from './vault'
@@ -31,19 +33,23 @@ export class AwsRegionServices extends cdk.Stack implements Services  {
   public readonly redis: {host: string, port: string}
   public readonly fs: string
   public readonly vault: string
+  public readonly pubsub: sns.ITopic
 
   constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
     super(scope, id, props)
     this.id = scope.node.tryGetContext('subdomain') || 'privx'
     const cidr = scope.node.tryGetContext('cidr') || '10.0.0.0/16'
+    const email = scope.node.tryGetContext('email')
 
     const secret = vault.Secret(this)
     this.vault = secret.secretArn
-    
+
+    this.pubsub = incident.Channel(this, email)
+
     this.vpc = net.Vpc(this, cidr)
     this.storageSg = new ec2.SecurityGroup(this, 'StorageSg', { vpc: this.vpc })
 
-    const db = storage.Db(this, this.id, this.vpc, this.storageSg, secret)
+    const db = storage.Db(this, this.id, this.vpc, this.storageSg, secret, this.pubsub)
     this.db = { host: db.dbInstanceEndpointAddress, port: db.dbInstanceEndpointPort }
     
     const redis = storage.Redis(this, this.vpc, this.storageSg)
@@ -66,6 +72,6 @@ export class Service extends cdk.Stack {
     const domain = scope.node.tryGetContext('domain')
     const nodes = compute.EC2(this, props.services)
     const lb = net.PublicHttps(this, props.services.vpc, props.services.id, domain)
-    net.Endpoint(this, props.services.vpc, lb, nodes)
+    net.Endpoint(this, props.services.vpc, lb, nodes, props.services.pubsub)
   }
 }
