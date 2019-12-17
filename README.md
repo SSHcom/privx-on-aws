@@ -25,13 +25,19 @@ PrivX is an ultimate replacement for jump hosts and bastions. It adds traceabili
 
 The latest version of Infrastructure as a Code is available at `master` branch of the repository. All development, including new features and bug fixes, take place on the `master` branch using forking and pull requests as described in contribution guidelines.
 
-We are using [AWS CDK](https://github.com/aws/aws-cdk) and [TypeScript](https://github.com/microsoft/typescript) to code PrivX infrastructure components. Use AWS CDK command line tools to deploy PrivX to your AWS Account. **Please note**, the deployment requires:
+We are using [AWS CDK](https://github.com/aws/aws-cdk) and [TypeScript](https://github.com/microsoft/typescript) to code PrivX infrastructure components:
 
-- [x] configure target AWS region using environment variables
-- [x] install dependencies
-- [x] Obtain `subdomain`, `domain` name(s) and [configure AWS Route53 HostedZone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html)
-- [x] Allocate unique class A network `cidr` block for AWS VPC
-- [x] Email address to send CloudWatch alerts
+```bash
+npm install -g typescript ts-node aws-cdk
+```
+
+Use AWS CDK command line tools to deploy PrivX to your AWS Account. **Please note**, the deployment requires:
+
+- configure target AWS region using environment variables
+- install dependencies
+- Obtain `subdomain`, `domain` name(s) and [configure AWS Route53 HostedZone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html)
+- Allocate unique class A network `cidr` block for AWS VPC
+- Email address to send CloudWatch alerts
 
 ```bash
 ##
@@ -40,6 +46,11 @@ export CDK_DEFAULT_ACCOUNT=Your-Account-Id
 export CDK_DEFAULT_REGION=eu-west-1
 export AWS_DEFAULT_REGION=eu-west-1
 npm install
+
+##
+## bootstrap AWS region with AWS CDK 
+cdk bootstrap aws://${CDK_DEFAULT_ACCOUNT}/${CDK_DEFAULT_REGION} \
+  -c domain=example.com
 
 ##
 ## deploy PrivX
