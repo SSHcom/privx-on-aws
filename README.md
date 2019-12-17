@@ -75,7 +75,7 @@ cdk deploy privx-service \
   -c email=my.email@company.com
 ```
 
-In few minutes, your own instance of PrivX solution is available.
+In few minutes, your own instance of PrivX solution is available. Please check [our playbook](doc/playbook.md) or raise [GitHub issue](https://github.com/SSHcom/privx-on-aws/issues) if you have any troubles with deployment process.
 
 ![architecture](doc/privx.png)
 
@@ -96,6 +96,16 @@ In the final step, please obtain a [**license code**](https://info.ssh.com/privx
 * [Getting Started with PrivX](https://help.ssh.com/support/solutions/articles/36000194728-getting-started-with-privx)
 * Learn more about [PrivX Users and Permissions](https://help.ssh.com/support/solutions/articles/36000194730-privx-users-and-permissions)
 * Check [Online Administrator Manual](https://help.ssh.com/support/solutions/folders/36000185818)
+
+## Bugs
+
+If you experience any issues with the library, please let us know via [GitHub issues](https://github.com/SSHcom/privx-on-aws/issues). We appreciate detailed and accurate reports that help us to identity and replicate the issue. 
+
+* **Specify** the configuration of your environment. Include which operating system you use and the versions of runtime environments. 
+
+* **Attach** logs, screenshots and exceptions, in possible.
+
+* **Reveal** the steps you took to reproduce the problem, include code snippet or links to your project.
 
 
 ## How To Contribute
