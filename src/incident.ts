@@ -53,7 +53,7 @@ export const HighAvailability = (scope: cdk.Construct, target: alb.ApplicationTa
       // TODO: 'https://github.com/SSHcom/privx-on-aws/doc/playbook/high-availability.md',
     ].join('\n'),
     comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
-    datapointsToAlarm: 2,
+    datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
       dimensions: {
@@ -76,7 +76,7 @@ export const ServiceAvailability = (scope: cdk.Construct, target: alb.Applicatio
       // TODO: 'https://github.com/SSHcom/privx-on-aws/doc/playbook/service-availability.md',
     ].join('\n'),
     comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-    datapointsToAlarm: 2,
+    datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
       dimensions: {
@@ -107,7 +107,7 @@ export const ServiceOverload = (scope: cdk.Construct, nodes: asg.AutoScalingGrou
       // TODO: 'https://github.com/SSHcom/privx-on-aws/doc/playbook/service-overload.md',
     ].join('\n'),
     comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-    datapointsToAlarm: 2,
+    datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
       dimensions: { AutoScalingGroupName: nodes.autoScalingGroupName },
@@ -129,7 +129,7 @@ export const ServiceInDebt = (scope: cdk.Construct, nodes: asg.AutoScalingGroup,
       // TODO: 'https://github.com/SSHcom/privx-on-aws/doc/playbook/service-in-debt.md',
     ].join('\n'),
     comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
-    datapointsToAlarm: 2,
+    datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
       dimensions: { AutoScalingGroupName: nodes.autoScalingGroupName },
@@ -157,7 +157,7 @@ export const DbOverload = (scope: cdk.Construct, db: rds.DatabaseInstance, thres
       // TODO: 'https://github.com/SSHcom/privx-on-aws/doc/playbook/db-overload.md',
     ].join('\n'),
     comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-    datapointsToAlarm: 2,
+    datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
       dimensions: { DBInstanceIdentifier: db.instanceIdentifier },
@@ -179,7 +179,7 @@ export const DbInDebt = (scope: cdk.Construct, db: rds.DatabaseInstance, thresho
       // TODO: 'https://github.com/SSHcom/privx-on-aws/doc/playbook/db-in-debt.md',
     ].join('\n'),
     comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
-    datapointsToAlarm: 2,
+    datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
       dimensions: { DBInstanceIdentifier: db.instanceIdentifier },
@@ -201,7 +201,7 @@ export const DbOutOfMem = (scope: cdk.Construct, db: rds.DatabaseInstance, thres
       // TODO: 'https://github.com/SSHcom/privx-on-aws/doc/playbook/db-out-of-mem.md',
     ].join('\n'),
     comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
-    datapointsToAlarm: 2,
+    datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
       dimensions: { DBInstanceIdentifier: db.instanceIdentifier },
@@ -223,7 +223,7 @@ export const DbOutOfDisk = (scope: cdk.Construct, db: rds.DatabaseInstance, thre
       // TODO: 'https://github.com/SSHcom/privx-on-aws/doc/playbook/db-out-of-disk.md',
     ].join('\n'),
     comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
-    datapointsToAlarm: 2,
+    datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
       dimensions: { DBInstanceIdentifier: db.instanceIdentifier },
@@ -245,7 +245,7 @@ export const DbStorageInDebt = (scope: cdk.Construct, db: rds.DatabaseInstance, 
       // TODO: 'https://github.com/SSHcom/privx-on-aws/doc/playbook/db-storage-in-debt.md',
     ].join('\n'),
     comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
-    datapointsToAlarm: 2,
+    datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
       dimensions: { DBInstanceIdentifier: db.instanceIdentifier },
