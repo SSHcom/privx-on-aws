@@ -25,23 +25,37 @@ PrivX is an ultimate replacement for jump hosts and bastions. It adds traceabili
 
 The latest version of Infrastructure as a Code is available at `master` branch of the repository. All development, including new features and bug fixes, take place on the `master` branch using forking and pull requests as described in contribution guidelines.
 
-We are using [AWS CDK](https://github.com/aws/aws-cdk) and [TypeScript](https://github.com/microsoft/typescript) to code PrivX infrastructure components:
+
+### Requirements
+
+1. We are using [AWS CDK](https://github.com/aws/aws-cdk) and [TypeScript](https://github.com/microsoft/typescript) to code PrivX infrastructure components. You have to configure your environment with [node and npm](https://nodejs.org/en/download/) version 10.x or later.
 
 ```bash
+## with brew on MacOS
+brew install node
+
+## then install CDK
 npm install -g typescript ts-node aws-cdk
 ```
 
-Use AWS CDK command line tools to deploy PrivX to your AWS Account. **Please note**, the deployment requires:
+2. Obtain [access to target AWS Account](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html). You shall have ability to create/delete AWS resources.
 
-- configure target AWS region using environment variables
-- install dependencies
-- Obtain `subdomain`, `domain` name(s) and [configure AWS Route53 HostedZone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html)
-- Allocate unique class A network `cidr` block for AWS VPC
-- Email address to send CloudWatch alerts
+
+### Deployments
+
+Use AWS CDK command line tools to deploy PrivX to your AWS Account. **Please note**, the process consists of:
+
+1. configure target AWS region
+2. install dependent components
+3. Obtain `subdomain`, `domain` name(s) and [configure AWS Route53 HostedZone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html). **Do not use any** non-alphabet characters including punctuation in the subdomain name.
+4. Allocate unique class A network `cidr` block for AWS VPC
+5. Email address to deliver CloudWatch alerts
 
 ```bash
 ##
 ## pre-config deployment process
+export AWS_ACCESS_KEY_ID=Your-Access-Key
+export AWS_SECRET_ACCESS_KEY=Your-Secret-Key
 export CDK_DEFAULT_ACCOUNT=Your-Account-Id
 export CDK_DEFAULT_REGION=eu-west-1
 export AWS_DEFAULT_REGION=eu-west-1
@@ -61,7 +75,12 @@ cdk deploy privx-service \
   -c email=my.email@company.com
 ```
 
-In few minutes, your own instance of PrivX solution is available. Open a Web browser with your fully qualified domain name, e.g. `https://privx.example.com`.
+In few minutes, your own instance of PrivX solution is available.
+
+![architecture](doc/privx.png)
+
+Open a Web browser with your fully qualified domain name, e.g. `https://privx.example.com`.
+
 
 The login credentials for `superuser` is available in your AWS Account:
 1. Choose right region 
