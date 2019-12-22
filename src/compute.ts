@@ -64,12 +64,9 @@ const mount = (services: Services) => [
   'PATH=$PATH:/usr/local/bin',
   'AZ=`curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone`',
   `EFS=$AZ.${services.fs}.efs.${cdk.Aws.REGION}.amazonaws.com`,
-  `mkdir /mnt/efs`,
-  `mount -t nfs4 $EFS:/ /mnt/efs`,
-  `mkdir -p /mnt/efs/${services.id}`,
   `mkdir -p /opt/privx`,
-  `mount -t nfs4 $EFS:/${services.id} /opt/privx`,
-  `echo -e "$EFS:/${services.id} \t\t /opt/privx \t nfs \t defaults \t 0 \t 0" | tee -a /etc/fstab`,
+  `mount -t nfs4 $EFS:/ /opt/privx`,
+  `echo -e "$EFS:/ \t\t /opt/privx \t nfs \t defaults \t 0 \t 0" | tee -a /etc/fstab`,
 ].join('\n')
 
 const bootstrap = (services: Services) => [
