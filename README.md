@@ -68,7 +68,7 @@ cdk bootstrap aws://${CDK_DEFAULT_ACCOUNT}/${CDK_DEFAULT_REGION} \
 
 ##
 ## deploy PrivX
-cdk deploy privx-service \
+cdk deploy privx-on-aws \
   -c cidr=10.0.0.0/16 \
   -c subdomain=privx \
   -c domain=example.com \

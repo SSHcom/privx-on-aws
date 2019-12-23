@@ -15,14 +15,23 @@
 //
 import * as asg from '@aws-cdk/aws-autoscaling'
 import * as ec2 from '@aws-cdk/aws-ec2'
+import * as efs from '@aws-cdk/aws-efs'
 import * as iam from '@aws-cdk/aws-iam'
+import * as vault from '@aws-cdk/aws-secretsmanager'
+import * as sns from '@aws-cdk/aws-sns'
 import * as cdk from '@aws-cdk/core'
-import { Services } from './config'
 import * as incident from './incident'
 
 export const EC2 = (
   scope: cdk.Construct,
-  services: Services
+  serviceName: string,
+  vpc: ec2.IVpc,
+  sg: ec2.ISecurityGroup,
+  db: {host: string, port: string},
+  redis: {host: string, port: string},
+  fs: efs.CfnFileSystem,
+  secret: vault.Secret,
+  topic: sns.ITopic,
 ): asg.AutoScalingGroup => {
   const nodes = new asg.AutoScalingGroup(scope, 'Nodes', {
     desiredCapacity: 1,
@@ -32,20 +41,20 @@ export const EC2 = (
     }),
     maxCapacity: 1,
     minCapacity: 0,
-    role: Role(scope, services),
-    vpc: services.vpc,
+    role: Role(scope, secret),
+    vpc,
     vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE },
   })
-  nodes.addUserData(mount(services), bootstrap(services))
-  nodes.addSecurityGroup(services.storageSg)
+  nodes.addUserData(mount(fs), bootstrap(serviceName, db, redis, secret))
+  nodes.addSecurityGroup(sg)
 
-  incident.fmap(incident.ServiceOverload(scope, nodes, 60), services.pubsub)
-  incident.fmap(incident.ServiceInDebt(scope, nodes, 10), services.pubsub)
+  incident.fmap(incident.ServiceOverload(scope, nodes, 60), topic)
+  incident.fmap(incident.ServiceInDebt(scope, nodes, 10), topic)
 
   return nodes
 }
 
-const Role = (scope: cdk.Construct, services: Services): iam.Role => {
+const Role = (scope: cdk.Construct, secret: vault.Secret): iam.Role => {
   const role = new iam.Role(scope, 'Ec2IAM', {
     assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
   })
@@ -53,23 +62,28 @@ const Role = (scope: cdk.Construct, services: Services): iam.Role => {
   role.addToPolicy(
     new iam.PolicyStatement({
       actions: ['secretsmanager:GetSecretValue'],
-      resources: [services.vault],
+      resources: [secret.secretArn],
     })
   )
 
   return role
 }
 
-const mount = (services: Services) => [
+const mount = (fs: efs.CfnFileSystem) => [
   'PATH=$PATH:/usr/local/bin',
   'AZ=`curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone`',
-  `EFS=$AZ.${services.fs}.efs.${cdk.Aws.REGION}.amazonaws.com`,
+  `EFS=$AZ.${fs.ref}.efs.${cdk.Aws.REGION}.amazonaws.com`,
   `mkdir -p /opt/privx`,
   `mount -t nfs4 $EFS:/ /opt/privx`,
   `echo -e "$EFS:/ \t\t /opt/privx \t nfs \t defaults \t 0 \t 0" | tee -a /etc/fstab`,
 ].join('\n')
 
-const bootstrap = (services: Services) => [
+const bootstrap = (
+  serviceName: string,
+  db: {host: string, port: string},
+  redis: {host: string, port: string},
+  secret: vault.Secret,
+) => [
   'amazon-linux-extras install epel',
   'yum -y update',
   'yum install -y awscli jq',
@@ -88,22 +102,22 @@ const bootstrap = (services: Services) => [
   '  export PRIVX_IP_ADDRESSES="127.0.0.1"',
   '  export PRIVX_USE_EXTERNAL_DATABASE=1',
 
-  `  export PRIVX_POSTGRES_ADDRESS=${services.db.host}`,
-  `  export PRIVX_POSTGRES_PORT=${services.db.port}`,
-  `  export PRIVX_POSTGRES_USER=${services.id}`,
-  `  export PRIVX_POSTGRES_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${services.vault} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
+  `  export PRIVX_POSTGRES_ADDRESS=${db.host}`,
+  `  export PRIVX_POSTGRES_PORT=${db.port}`,
+  `  export PRIVX_POSTGRES_USER=${serviceName}`,
+  `  export PRIVX_POSTGRES_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${secret.secretArn} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
 
   '  export DB_EXTERNAL_CREATE_PSQL_USER=true',
-  `  export PRIVX_DATABASE_NAME=${services.id}`,
-  `  export PRIVX_DATABASE_USERNAME=${services.id}`,
-  `  export PRIVX_DATABASE_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${services.vault} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
+  `  export PRIVX_DATABASE_NAME=${serviceName}`,
+  `  export PRIVX_DATABASE_USERNAME=${serviceName}`,
+  `  export PRIVX_DATABASE_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${secret.secretArn} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
   '  export PRIVX_DATABASE_SSLMODE=require',
-  `  export PRIVX_REDIS_ADDRESS=${services.redis.host}`,
-  `  export PRIVX_REDIS_PORT=${services.redis.port}`,
+  `  export PRIVX_REDIS_ADDRESS=${redis.host}`,
+  `  export PRIVX_REDIS_PORT=${redis.port}`,
   '  export PRIVX_KEYVAULT_PKCS11_ENABLE=0',
 
   '  export PRIVX_SUPERUSER=superuser',
-  `  export PRIVX_SUPERUSER_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${services.vault} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
+  `  export PRIVX_SUPERUSER_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${secret.secretArn} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
 
   '  export PRIVX_DISABLE_SELINUX=1',
   '  /opt/privx/scripts/postinstall.sh',
