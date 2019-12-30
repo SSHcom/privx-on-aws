@@ -68,16 +68,13 @@ const privateSubnet = (cidrMask: number, reserved: boolean = false): ec2.SubnetC
 export const PublicHttps = (
   scope: cdk.Construct,
   vpc: ec2.IVpc,
-  subdomain: string,
-  domain: string
+  site: string,
+  zone: dns.IHostedZone,
+  certificate: acm.ICertificate
 ): alb.ApplicationListener => {
-  const site = `${subdomain}.${domain}`
-  const zone = dns.HostedZone.fromLookup(scope, 'HostedZone', { domainName: domain })
-  const cert = new acm.DnsValidatedCertificate(scope, 'Cert', { domainName: site, hostedZone: zone })
-
   const instance = Lb(scope, vpc)
   const listener = instance.addListener(`Https`, {
-    certificateArns: [cert.certificateArn],
+    certificateArns: [certificate.certificateArn],
     defaultTargetGroups: [ None(scope, vpc, 443) ],
     open: true,
     port: 443,

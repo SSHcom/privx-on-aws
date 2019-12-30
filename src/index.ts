@@ -24,6 +24,5 @@ const spec = {
   }
 }
 
-const services = new stack.AwsRegionServices(app, 'privx-config', spec)
-new stack.Service(app, 'privx-service', { services, ...spec })
+new stack.Service(app, 'privx-on-aws', { ...spec })
 app.synth()

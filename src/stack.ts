@@ -13,11 +13,11 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
+import * as acm from '@aws-cdk/aws-certificatemanager'
 import * as ec2 from '@aws-cdk/aws-ec2'
-import * as sns from '@aws-cdk/aws-sns'
+import * as dns from '@aws-cdk/aws-route53'
 import * as cdk from '@aws-cdk/core'
 import * as compute from './compute'
-import { Services } from './config'
 import * as incident from './incident'
 import * as net from './net'
 import * as storage from './storage'
@@ -25,53 +25,34 @@ import * as vault from './vault'
 
 //
 //
-export class AwsRegionServices extends cdk.Stack implements Services  {
-  public readonly id: string
-  public readonly vpc: ec2.IVpc
-  public readonly storageSg: ec2.ISecurityGroup
-  public readonly db: {host: string, port: string}
-  public readonly redis: {host: string, port: string}
-  public readonly fs: string
-  public readonly vault: string
-  public readonly pubsub: sns.ITopic
-
-  constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
-    super(scope, id, props)
-    this.id = scope.node.tryGetContext('subdomain') || 'privx'
-    const cidr = scope.node.tryGetContext('cidr') || '10.0.0.0/16'
-    const email = scope.node.tryGetContext('email')
+export class Service extends cdk.Stack {
+  constructor(app: cdk.App, id: string, props: cdk.StackProps) {
+    super(app, id, props)
+    const cidr = app.node.tryGetContext('cidr') || '10.0.0.0/16'
+    const email = app.node.tryGetContext('email')
+    const subdomain = app.node.tryGetContext('subdomain') || 'privx'
+    const domain = app.node.tryGetContext('domain')
 
     const secret = vault.Secret(this)
-    this.vault = secret.secretArn
+    const pubsub = incident.Channel(this, email)
 
-    this.pubsub = incident.Channel(this, email)
+    const site = `${subdomain}.${domain}`
+    const zone = dns.HostedZone.fromLookup(this, 'HostedZone', { domainName: domain })
+    const cert = new acm.DnsValidatedCertificate(this, 'Cert', { domainName: site, hostedZone: zone })
+  
+    const vpc = net.Vpc(this, cidr)
 
-    this.vpc = net.Vpc(this, cidr)
-    this.storageSg = new ec2.SecurityGroup(this, 'StorageSg', { vpc: this.vpc })
-
-    const db = storage.Db(this, this.id, this.vpc, this.storageSg, secret, this.pubsub)
-    this.db = { host: db.dbInstanceEndpointAddress, port: db.dbInstanceEndpointPort }
+    const storageSg = new ec2.SecurityGroup(this, 'StorageSg', { vpc })
+    const db = storage.Db(this, subdomain, vpc, storageSg, secret, pubsub)
+    const dbHost = { host: db.dbInstanceEndpointAddress, port: db.dbInstanceEndpointPort }
     
-    const redis = storage.Redis(this, this.vpc, this.storageSg)
-    this.redis = { host: redis.attrRedisEndpointAddress, port: redis.attrRedisEndpointPort}
+    const redis = storage.Redis(this, vpc, storageSg)
+    const redisHost = { host: redis.attrRedisEndpointAddress, port: redis.attrRedisEndpointPort}
 
-    const efs = storage.Efs(this, this.vpc, this.storageSg)
-    this.fs = efs.ref
-  }
-}
+    const efs = storage.Efs(this, vpc, storageSg)
 
-//
-//
-export interface ServiceProps extends cdk.StackProps {
-  readonly services: Services
-}
-
-export class Service extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props: ServiceProps) {
-    super(scope, id, props)
-    const domain = scope.node.tryGetContext('domain')
-    const nodes = compute.EC2(this, props.services)
-    const lb = net.PublicHttps(this, props.services.vpc, props.services.id, domain)
-    net.Endpoint(this, props.services.vpc, lb, nodes, props.services.pubsub)
+    const nodes = compute.EC2(this, subdomain, vpc, storageSg, dbHost, redisHost, efs, secret, pubsub)
+    const lb = net.PublicHttps(this, vpc, site, zone, cert)
+    net.Endpoint(this, vpc, lb, nodes, pubsub)
   }
 }

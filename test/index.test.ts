@@ -15,13 +15,13 @@
 //
 import { expect, haveResource } from '@aws-cdk/assert'
 import * as cdk from '@aws-cdk/core'
-import { AwsRegionServices, Service } from '../src/stack'
+import { Service } from '../src/stack'
 
-//
-//
-test('config spawns required resources', () => {
-  const app = new cdk.App()
-  const stack = new AwsRegionServices(app, 'test-config', {})
+test('stack spawns required resources', () => {
+  const app = new cdk.App({ context: { domain: 'example.com' }})
+  const stack = new Service(app, 'test-stack', {
+    env: { account: '000000000000', region: 'us-east-1'},
+  })
   const elements: string[] = [
     'AWS::SecretsManager::Secret',
     'AWS::EC2::VPC',
@@ -38,20 +38,6 @@ test('config spawns required resources', () => {
     'AWS::EFS::MountTarget',
     'AWS::SNS::Topic',
     'AWS::CloudWatch::Alarm',
-  ]
-  elements.forEach(x => expect(stack).to(haveResource(x)))
-})
-
-test('stack spawns required resources', () => {
-  const app = new cdk.App({ context: { domain: 'example.com' }})
-  const services = new AwsRegionServices(app, 'test-config', {
-    env: { account: '000000000000', region: 'us-east-1'},
-  })
-  const stack = new Service(app, 'test-stack', {
-    env: { account: '000000000000', region: 'us-east-1'},
-    services,
-  })
-  const elements: string[] = [
     'AWS::Lambda::Function',
     'AWS::IAM::Policy',
     'AWS::IAM::Role',
