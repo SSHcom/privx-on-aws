@@ -33,7 +33,8 @@ export const EC2 = (
   secret: vault.Secret,
   topic: sns.ITopic,
 ): asg.AutoScalingGroup => {
-  const nodes = new asg.AutoScalingGroup(scope, 'Nodes', {
+    const fqdn = `${scope.node.tryGetContext('subdomain')}.${scope.node.tryGetContext('domain')}`
+  const nodes = new asg.AutoScalingGroup(scope,  (fqdn || 'nodes'), {
     desiredCapacity: 1,
     instanceType: new ec2.InstanceType('t3.small'),
     machineImage: new ec2.AmazonLinuxImage({
@@ -43,10 +44,14 @@ export const EC2 = (
     minCapacity: 0,
     role: Role(scope, secret),
     vpc,
-    vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE },
+    associatePublicIpAddress: true,
+    vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
+    keyName: scope.node.tryGetContext('sshkey') || ''
   })
-  nodes.addUserData(mount(fs), bootstrap(serviceName, db, redis, secret))
+  nodes.addUserData(mount(fs), bootstrap(scope, serviceName, db, redis, secret))
   nodes.addSecurityGroup(sg)
+
+  cdk.Tag.add(nodes,'domain', fqdn || 'privx')
 
   incident.fmap(incident.ServiceOverload(scope, nodes, 60), topic)
   incident.fmap(incident.ServiceInDebt(scope, nodes, 10), topic)
@@ -79,6 +84,7 @@ const mount = (fs: efs.CfnFileSystem) => [
 ].join('\n')
 
 const bootstrap = (
+  scope: cdk.Construct,
   serviceName: string,
   db: {host: string, port: string},
   redis: {host: string, port: string},
@@ -120,6 +126,7 @@ const bootstrap = (
   `  export PRIVX_SUPERUSER_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${secret.secretArn} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
 
   '  export PRIVX_DISABLE_SELINUX=1',
+  `  sed -i '/privx_instance_name = ""/c\privx_instance_name = "${scope.node.tryGetContext('subdomain')}"' /opt/privx/etc/new/shared-config.toml`,
   '  /opt/privx/scripts/postinstall.sh',
   '  mv -f /etc/pki/CA/certs/privx-ca.crt /opt/privx/cert/privx-ca.crt',
   '  ln -s /opt/privx/cert/privx-ca.crt /etc/pki/CA/certs/privx-ca.crt',
