@@ -39,20 +39,25 @@ export class Service extends cdk.Stack {
     const site = `${subdomain}.${domain}`
     const zone = dns.HostedZone.fromLookup(this, 'HostedZone', { domainName: domain })
     const cert = new acm.DnsValidatedCertificate(this, 'Cert', { domainName: site, hostedZone: zone })
-  
+
     const vpc = net.Vpc(this, cidr)
 
     const storageSg = new ec2.SecurityGroup(this, 'StorageSg', { vpc })
     const db = storage.Db(this, subdomain, vpc, storageSg, secret, pubsub)
     const dbHost = { host: db.dbInstanceEndpointAddress, port: db.dbInstanceEndpointPort }
-    
+
     const redis = storage.Redis(this, vpc, storageSg)
     const redisHost = { host: redis.attrRedisEndpointAddress, port: redis.attrRedisEndpointPort}
 
     const efs = storage.Efs(this, vpc, storageSg)
 
     const nodes = compute.EC2(this, subdomain, vpc, storageSg, dbHost, redisHost, efs, secret, pubsub)
-    const lb = net.PublicHttps(this, vpc, site, zone, cert)
-    net.Endpoint(this, vpc, lb, nodes, pubsub)
+
+    const lb = net.Lb(this, vpc)
+    const httpsLb = net.PublicHttps(this, vpc, lb, site, zone, cert)
+    net.Endpoint(this, vpc, httpsLb, nodes, pubsub)
+
+    const httpLb = net.PublicHttp(this, vpc, lb)
+    net.RedirectEndpoint(this, httpLb)
   }
 }

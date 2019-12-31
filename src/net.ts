@@ -68,12 +68,12 @@ const privateSubnet = (cidrMask: number, reserved: boolean = false): ec2.SubnetC
 export const PublicHttps = (
   scope: cdk.Construct,
   vpc: ec2.IVpc,
+  lb: alb.ApplicationLoadBalancer,
   site: string,
   zone: dns.IHostedZone,
   certificate: acm.ICertificate
 ): alb.ApplicationListener => {
-  const instance = Lb(scope, vpc)
-  const listener = instance.addListener(`Https`, {
+  const listener = lb.addListener(`Https`, {
     certificateArns: [certificate.certificateArn],
     defaultTargetGroups: [ None(scope, vpc, 443) ],
     open: true,
@@ -84,7 +84,7 @@ export const PublicHttps = (
 
   new dns.ARecord(scope, 'DNS', {
     recordName: site,
-    target: {aliasTarget: new target.LoadBalancerTarget(instance)},
+    target: {aliasTarget: new target.LoadBalancerTarget(lb)},
     ttl: cdk.Duration.seconds(60),
     zone,
   })
@@ -92,7 +92,23 @@ export const PublicHttps = (
   return listener
 }
 
-const Lb = (scope: cdk.Construct, vpc: ec2.IVpc): alb.ApplicationLoadBalancer =>
+export const PublicHttp = (
+  scope: cdk.Construct,
+  vpc: ec2.IVpc,
+  lb: alb.ApplicationLoadBalancer,
+): alb.ApplicationListener => {
+  //const instance = Lb(scope, vpc)
+  const listener = lb.addListener(`Http`, {
+    defaultTargetGroups: [ None(scope, vpc, 80) ],
+    open: true,
+    port: 80,
+    protocol: alb.ApplicationProtocol.HTTP,
+  })
+
+  return listener
+}
+
+export const Lb = (scope: cdk.Construct, vpc: ec2.IVpc): alb.ApplicationLoadBalancer =>
   new alb.ApplicationLoadBalancer(scope, 'Lb',
     {
       internetFacing: true,
@@ -102,7 +118,7 @@ const Lb = (scope: cdk.Construct, vpc: ec2.IVpc): alb.ApplicationLoadBalancer =>
   )
 
 const None = (scope: cdk.Construct, vpc: ec2.IVpc, port: number): alb.ApplicationTargetGroup =>
-  new alb.ApplicationTargetGroup(scope, 'None', {
+  new alb.ApplicationTargetGroup(scope, `None${port}`, {
     port,
     targetType: alb.TargetType.INSTANCE,
     vpc,
@@ -140,6 +156,24 @@ export const Endpoint = (
 
   incident.fmap(incident.HighAvailability(scope, endpoint,  1), topic)
   incident.fmap(incident.ServiceAvailability(scope, endpoint, 20), topic)
+
+  return lb
+}
+
+export const RedirectEndpoint = (
+  scope: cdk.Construct,
+  listener: alb.IApplicationListener,
+): alb.ApplicationListenerRule => {
+  const lb = new alb.ApplicationListenerRule(scope, 'EpRedirect', {
+    listener,
+    pathPattern: '/*',
+    priority: Math.floor(Math.random() * 999),
+    redirectResponse: {
+        statusCode: 'HTTP_301',
+        port: '443',
+        protocol: 'HTTPS',
+      }
+  })
 
   return lb
 }
