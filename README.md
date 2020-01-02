@@ -62,7 +62,7 @@ export AWS_DEFAULT_REGION=eu-west-1
 npm install
 
 ##
-## bootstrap AWS region with AWS CDK 
+## bootstrap AWS region with AWS CDK
 cdk bootstrap aws://${CDK_DEFAULT_ACCOUNT}/${CDK_DEFAULT_REGION} \
   -c domain=example.com
 
@@ -73,6 +73,7 @@ cdk deploy privx-on-aws \
   -c subdomain=privx \
   -c domain=example.com \
   -c email=my.email@company.com
+  -c sshkey=aws-keypair-name
 ```
 
 In few minutes, your own instance of PrivX solution is available. Please check [our playbook](doc/playbook.md) or raise [GitHub issue](https://github.com/SSHcom/privx-on-aws/issues) if you have any troubles with deployment process.
@@ -83,7 +84,7 @@ Open a Web browser with your fully qualified domain name, e.g. `https://privx.ex
 
 
 The login credentials for `superuser` is available in your AWS Account:
-1. Choose right region 
+1. Choose right region
 2. Goto AWS Secrets Manager > Secrets > KeyVault...
 3. Scroll to Secret value section
 4. Click Retrieve secret value
@@ -99,9 +100,9 @@ In the final step, please obtain a [**license code**](https://info.ssh.com/privx
 
 ## Bugs
 
-If you experience any issues with the library, please let us know via [GitHub issues](https://github.com/SSHcom/privx-on-aws/issues). We appreciate detailed and accurate reports that help us to identity and replicate the issue. 
+If you experience any issues with the library, please let us know via [GitHub issues](https://github.com/SSHcom/privx-on-aws/issues). We appreciate detailed and accurate reports that help us to identity and replicate the issue.
 
-* **Specify** the configuration of your environment. Include which operating system you use and the versions of runtime environments. 
+* **Specify** the configuration of your environment. Include which operating system you use and the versions of runtime environments.
 
 * **Attach** logs, screenshots and exceptions, in possible.
 
