@@ -97,7 +97,6 @@ export const PublicHttp = (
   vpc: ec2.IVpc,
   lb: alb.ApplicationLoadBalancer,
 ): alb.ApplicationListener => {
-  //const instance = Lb(scope, vpc)
   const listener = lb.addListener(`Http`, {
     defaultTargetGroups: [ None(scope, vpc, 80) ],
     open: true,
