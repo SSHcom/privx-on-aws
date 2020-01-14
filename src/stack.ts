@@ -15,6 +15,7 @@
 //
 import * as acm from '@aws-cdk/aws-certificatemanager'
 import * as ec2 from '@aws-cdk/aws-ec2'
+import * as logs from '@aws-cdk/aws-logs'
 import * as dns from '@aws-cdk/aws-route53'
 import * as cdk from '@aws-cdk/core'
 import * as compute from './compute'
@@ -51,6 +52,11 @@ export class Service extends cdk.Stack {
 
     const efs = storage.Efs(this, vpc, storageSg)
 
+    new logs.LogGroup(this, 'Logs', {
+      logGroupName: '/privx',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      retention: logs.RetentionDays.ONE_MONTH,
+    })
     const nodes = compute.EC2(this, subdomain, vpc, storageSg, dbHost, redisHost, efs, secret, pubsub)
 
     const lb = net.Lb(this, vpc)
