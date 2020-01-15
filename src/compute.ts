@@ -48,7 +48,11 @@ export const EC2 = (
     vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
     keyName: scope.node.tryGetContext('sshkey') || ''
   })
-  nodes.addUserData(mount(fs), bootstrap(scope, serviceName, db, redis, secret))
+  nodes.addUserData(
+    mount(fs),
+    cloudwatchlogs(),
+    bootstrap(scope, serviceName, db, redis, secret),
+  )
   nodes.addSecurityGroup(sg)
 
   cdk.Tag.add(nodes,'domain', fqdn || 'privx')
@@ -71,6 +75,20 @@ const Role = (scope: cdk.Construct, secret: vault.Secret): iam.Role => {
     })
   )
 
+  role.addToPolicy(
+    new iam.PolicyStatement({
+      actions: [
+        'logs:CreateLogStream',
+        'logs:DescribeLogStreams',
+        'logs:CreateLogGroup',
+        'logs:PutLogEvents',
+      ],
+      resources: [
+        `arn:aws:logs:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:log-group:/privx:*`
+      ],
+    })
+  )
+
   return role
 }
 
@@ -81,6 +99,14 @@ const mount = (fs: efs.CfnFileSystem) => [
   `mkdir -p /opt/privx`,
   `mount -t nfs4 $EFS:/ /opt/privx`,
   `echo -e "$EFS:/ \t\t /opt/privx \t nfs \t defaults \t 0 \t 0" | tee -a /etc/fstab`,
+].join('\n')
+
+const cloudwatchlogs = () => [
+  'yum install -y awslogs',
+  `sed -i \'s/region =.*/region = ${cdk.Aws.REGION}/g\' /etc/awslogs/awscli.conf`,
+  `sed -i \'s/log_group_name =.*/log_group_name = \\/privx/g\' /etc/awslogs/awslogs.conf`,
+  'service awslogsd start',
+  'systemctl  enable awslogsd',
 ].join('\n')
 
 const bootstrap = (
@@ -97,9 +123,10 @@ const bootstrap = (
   'ln -s /opt/privx/nginx /etc/',
   'rm -Rf /etc/machine-id',
   'systemd-machine-id-setup',
-  'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-10.1-77_a3b1c609d.x86_64.rpm',
+  'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-11.0-69_2f9503b7d.x86_64.rpm',
 
   'install() {',
+  '  export PRIVX_DISABLE_SELINUX=1',
   '  sed -i \'s/data_folder =.*/data_folder="\\/opt\\/privx\\/audit"/g\' /opt/privx/etc/new/shared-config.toml',
   '  sed -i \'s/ID/ID_LIKE/g\' /opt/privx/scripts/px-issuer',
 
@@ -125,20 +152,16 @@ const bootstrap = (
   '  export PRIVX_SUPERUSER=superuser',
   `  export PRIVX_SUPERUSER_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${secret.secretArn} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
 
-  '  export PRIVX_DISABLE_SELINUX=1',
   `  sed -i '/privx_instance_name = ""/c\privx_instance_name = "${scope.node.tryGetContext('subdomain')}"' /opt/privx/etc/new/shared-config.toml`,
   '  /opt/privx/scripts/postinstall.sh',
-  '  mv -f /etc/pki/CA/certs/privx-ca.crt /opt/privx/cert/privx-ca.crt',
-  '  ln -s /opt/privx/cert/privx-ca.crt /etc/pki/CA/certs/privx-ca.crt',
   '}',
 
   'config() {',
-  '  ln -s /opt/privx/cert/privx-ca.crt /etc/pki/CA/certs/privx-ca.crt',
-  '  ln -s /opt/privx/cert/privx-ca.crt /etc/pki/ca-trust/source/anchors/privx-ca-crt',
-  '  update-ca-trust extract',
+  '  sed -i \'s/ID/ID_LIKE/g\' /opt/privx/scripts/px-issuer',
+  '  export PRIVX_DISABLE_SELINUX=1',
+  '  cp /opt/privx/etc/privx-ca.crt /etc/pki/tls/certs/',
   '  mv -f /opt/privx/bin/migration-tool /opt/privx/bin/migration-tool_',
   '  touch /opt/privx/bin/migration-tool && chmod a+x /opt/privx/bin/migration-tool',
-  '  export PRIVX_DISABLE_SELINUX=1',
   '  /opt/privx/scripts/postinstall.sh',
   '  mv -f /opt/privx/bin/migration-tool_ /opt/privx/bin/migration-tool',
   '}',
