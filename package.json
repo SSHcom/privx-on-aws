@@ -1,6 +1,6 @@
 {
   "name": "privx-on-aws",
-  "version": "11.0",
+  "version": "11.0.0",
   "description": "Just-in-time Access Management with PrivX on AWS",
   "license": "Apache 2.0",
   "dependencies": {
@@ -24,11 +24,11 @@
   "devDependencies": {
     "@types/jest": "^24.9.0",
     "coveralls": "^3.0.9",
-    "jest": "^24.9.0",
+    "jest": "^25.1.0",
     "prettier": "^1.19.1",
     "ts-jest": "^24.3.0",
     "ts-node": "^8.6.2",
-    "tslint": "^5.20.1",
+    "tslint": "^6.0.0",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^3.7.5"
   },
