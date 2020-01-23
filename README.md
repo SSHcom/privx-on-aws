@@ -1,6 +1,6 @@
-# PrivX on AWS
+# PrivX - Infrastructure as a Code on AWS
 
-PrivX is lean privileged access management solution for your On-Prem, AWS, Azure and GCP infrastructure, all in one multi-cloud solution. This project simplifies PrivX on-boarding experience with deployment automation using Infrastructure as a Code.
+PrivX is a lean and modern privileged access management solution to automate your AWS, Azure and GCP infrastructure access management in one multi-cloud solution. While it offers super great cloud experience, you can also easily connect your on-prem infrastructure to it for a single pane of glass access control and monitoring. This project further simplifies PrivX on-boarding experience with deployment automation using infrastructure as a code tooling.
 
 [![Build Status](https://secure.travis-ci.org/SSHcom/privx-on-aws.svg?branch=master)](http://travis-ci.org/SSHcom/privx-on-aws)
 [![Coverage Status](https://coveralls.io/repos/github/SSHcom/privx-on-aws/badge.svg?branch=master)](https://coveralls.io/github/SSHcom/privx-on-aws?branch=master)
@@ -10,15 +10,13 @@ PrivX is lean privileged access management solution for your On-Prem, AWS, Azure
 
 ## Inspiration
 
-Zero Standing Privileges improves established perimeter security. The perimeter security is based on network segmentation that separates trusted employees from untrusted one. It makes an optimistic assumption: everyone inside perimeter is trusted, outsiders are not trusted. However, anyone who breached perimeter becomes a trusted; an legitimate remote worker becomes untrusted with this model.
+Having seen how permanent passwords and left-behind and forgotten SSH keys enable access to critical environments years after they were actually created and needed, we started the PrivX project in order to get rid of the passwords and keys – to get rid of any permanent access altogether. We wanted to build a solution that only grants access when it's needed & on the level needed. Later on this approached was coined Just-in-Time-Access and the method as Zero Standing Privileges (ZSP) by industry analysts while part of the larger Zero Trust trend of always (re-)verifying a user before any access is granted.
 
-Just-in-time access management solves IAM challenges. **Please learn about it from our [presentation](https://www.youtube.com/watch?v=Atps1AiATVs)**
+PrivX automates the process of granting and revoking access by integrating & fetching identities and roles from your identity management system (LDAP, AD etc) and ensures your engineering and admin staff have one-click access to the right infrastructure resources at the right access level. You will also get full audit trail and monitoring - vital if you are handling sensitive data or for example open access for third parties to your environment.
 
-PrivX improves the process of granting and revoking access, ensures your engineering staff always have one-click access to the right infrastructure resources, and gives you an audit trail - vital if you are handling sensitive data or working in IT outsourcing.
+PrivX is totally free for small environments and commercial subscriptions are available for more serious use. Download **[Your PrivX Free](https://info.ssh.com/privx-free-access-management-software)**.
 
-PrivX is an ultimate replacement for jump hosts and bastions. It adds traceability to shared accounts using shared passwords, and conveniently combines access management for your On-Prem, AWS, Azure and GCP infrastructure, all in one multi-cloud solution.
-
-**[Get PrivX Free](https://info.ssh.com/privx-free-access-management-software)**
+To learn how PrivX works, please check out this **[video](https://www.youtube.com/watch?v=Atps1AiATVs)**.
 
 
 ## Getting Started
@@ -28,7 +26,7 @@ The latest version of Infrastructure as a Code is available at `master` branch o
 
 ### Requirements
 
-1. We are using [AWS CDK](https://github.com/aws/aws-cdk) and [TypeScript](https://github.com/microsoft/typescript) to code PrivX infrastructure components. You have to configure your environment with [node and npm](https://nodejs.org/en/download/) version 10.x or later.
+1. We are using [AWS CDK](https://github.com/aws/aws-cdk) and [TypeScript](https://github.com/microsoft/typescript) to code PrivX infrastructure components. You have to configure your environment with [node and npm](https://nodejs.org/en/download/) version 10.x or later and install required components.
 
 ```bash
 ## with brew on MacOS
@@ -40,20 +38,22 @@ npm install -g typescript ts-node aws-cdk
 
 2. Obtain [access to target AWS Account](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html). You shall have ability to create/delete AWS resources.
 
+3. Obtain `subdomain`, `domain` name(s) and [configure AWS Route53 HostedZone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html). If you have a fresh AWS Account or missing domain name, you can [request one from AWS](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html).
+
 
 ### Deployments
 
-Use AWS CDK command line tools to deploy PrivX to your AWS Account. **Please note**, the process consists of:
-
-1. configure target AWS region
-2. install dependent components
-3. Obtain `subdomain`, `domain` name(s) and [configure AWS Route53 HostedZone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html). **Do not use any** non-alphabet characters including punctuation in the subdomain name.
-4. Allocate unique class A network `cidr` block for AWS VPC
-5. Email address to deliver CloudWatch alerts
+Use AWS CDK command line tools to deploy PrivX to your AWS Account. **Please note**, the process consists of multiple stages:
 
 ```bash
 ##
-## pre-config deployment process
+## 1. clone privx-on-aws repository locally
+git clone https://github.com/SSHcom/privx-on-aws
+cd privx-on-aws
+
+##
+## 2. pre-config deployment process by configure environment and
+##    installing dependent components  
 export AWS_ACCESS_KEY_ID=Your-Access-Key
 export AWS_SECRET_ACCESS_KEY=Your-Secret-Key
 export CDK_DEFAULT_ACCOUNT=Your-Account-Id
@@ -62,17 +62,34 @@ export AWS_DEFAULT_REGION=eu-west-1
 npm install
 
 ##
-## bootstrap AWS region with AWS CDK
+## 3. configure and bootstrap target AWS region with AWS CDK.
+##    Please note, the process requires domain name here.
+##    the corresponding hosted zone must be properly configured otherwise
+##    deployment fails.
 cdk bootstrap aws://${CDK_DEFAULT_ACCOUNT}/${CDK_DEFAULT_REGION} \
   -c domain=example.com
 
 ##
-## deploy PrivX
+## 4. deploy PrivX, you need to define a few variables here
+##    subdomain   unique name of your privx instance. 
+##                DO NOT USE any non-alphabet characters including 
+##                punctuation in the subdomain name
+##
+##    cidr        allocate unique class A network `cidr` block for AWS VPC
+##                default value 10.0.0.0/16 fits to majority of deployments
+##
+##    email       address to deliver CloudWatch alerts
+##
+##    sshkey      AWS SSH key pair to access PrivX instance for debugging 
+##                purpose, keep empty to disable ssh access 
+##                See more about ssh key from AWS documentation
+##                https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+##
 cdk deploy privx-on-aws \
   -c cidr=10.0.0.0/16 \
   -c subdomain=privx \
   -c domain=example.com \
-  -c email=my.email@company.com
+  -c email=my.email@company.com \
   -c sshkey=aws-keypair-name
 ```
 
