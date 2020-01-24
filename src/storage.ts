@@ -33,6 +33,7 @@ export const Db = (
   const db = new rds.DatabaseInstance(scope, 'Db', {
     databaseName,
     deletionProtection: false,
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
     engine: rds.DatabaseInstanceEngine.POSTGRES,
     instanceClass: new ec2.InstanceType('t3.small'),
     masterUserPassword: secret.secretValueFromJson('secret'),
