@@ -123,7 +123,7 @@ const bootstrap = (
   'ln -s /opt/privx/nginx /etc/',
   'rm -Rf /etc/machine-id',
   'systemd-machine-id-setup',
-  'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-11.0-69_2f9503b7d.x86_64.rpm',
+  'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-11.1-98_897dc9c76.x86_64.rpm',
 
   'install() {',
   '  export PRIVX_DISABLE_SELINUX=1',

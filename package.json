@@ -1,6 +1,6 @@
 {
   "name": "privx-on-aws",
-  "version": "11.0.0",
+  "version": "11.1.0",
   "description": "Just-in-time Access Management with PrivX on AWS",
   "license": "Apache 2.0",
   "dependencies": {
