@@ -1,4 +1,6 @@
-# PrivX - Infrastructure as a Code on AWS
+# PrivX Free - Just-in-time Access Management
+
+> Available as Infrastructure as a Code on AWS for fast deployment.
 
 PrivX is a lean and modern privileged access management solution to automate your AWS, Azure and GCP infrastructure access management in one multi-cloud solution. While it offers super great cloud experience, you can also easily connect your on-prem infrastructure to it for a single pane of glass access control and monitoring. This project further simplifies PrivX on-boarding experience with deployment automation using infrastructure as a code tooling.
 
