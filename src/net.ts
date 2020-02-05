@@ -14,7 +14,6 @@
 //   limitations under the License.
 //
 import * as asg from '@aws-cdk/aws-autoscaling'
-import * as acm from '@aws-cdk/aws-certificatemanager'
 import * as ec2 from '@aws-cdk/aws-ec2'
 import * as alb from '@aws-cdk/aws-elasticloadbalancingv2'
 import * as dns from '@aws-cdk/aws-route53'
@@ -71,10 +70,10 @@ export const PublicHttps = (
   lb: alb.ApplicationLoadBalancer,
   site: string,
   zone: dns.IHostedZone,
-  certificate: acm.ICertificate
+  certificateArn: string
 ): alb.ApplicationListener => {
   const listener = lb.addListener(`Https`, {
-    certificateArns: [certificate.certificateArn],
+    certificateArns: [certificateArn],
     defaultTargetGroups: [ None(scope, vpc, 443) ],
     open: true,
     port: 443,

@@ -95,7 +95,7 @@ cdk deploy privx-on-aws \
   -c sshkey=aws-keypair-name
 ```
 
-In few minutes, your own instance of PrivX solution is available. Please check [our playbook](doc/playbook.md) or raise [GitHub issue](https://github.com/SSHcom/privx-on-aws/issues) if you have any troubles with deployment process. The deployment build entire [PrivX architecture](https://help.ssh.com/support/solutions/articles/36000205951-privx-architecture) in your AWS account.
+In few minutes, your own instance of PrivX solution is available. Please check [**our playbook**](doc/playbook.md) or raise [**GitHub issue**](https://github.com/SSHcom/privx-on-aws/issues) if you have **any troubles with deployment** process. The deployment build entire [PrivX architecture](https://help.ssh.com/support/solutions/articles/36000205951-privx-architecture) in your AWS account.
 
 ![architecture](doc/privx.png)
 

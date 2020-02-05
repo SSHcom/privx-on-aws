@@ -39,7 +39,9 @@ export class Service extends cdk.Stack {
 
     const site = `${subdomain}.${domain}`
     const zone = dns.HostedZone.fromLookup(this, 'HostedZone', { domainName: domain })
-    const cert = new acm.DnsValidatedCertificate(this, 'Cert', { domainName: site, hostedZone: zone })
+
+    const cert = app.node.tryGetContext('cert') ||
+      (new acm.DnsValidatedCertificate(this, 'Cert', { domainName: site, hostedZone: zone })).certificateArn
 
     const vpc = net.Vpc(this, cidr)
 

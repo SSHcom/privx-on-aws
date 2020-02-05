@@ -24,5 +24,6 @@ const spec = {
   }
 }
 
-new stack.Service(app, 'privx-on-aws', { ...spec })
+const name = app.node.tryGetContext('name') || 'privx-on-aws'
+new stack.Service(app, name, { ...spec })
 app.synth()
