@@ -24,6 +24,7 @@ import * as incident from './incident'
 
 export const EC2 = (
   scope: cdk.Construct,
+  site: string,
   serviceName: string,
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
@@ -51,7 +52,7 @@ export const EC2 = (
   nodes.addUserData(
     mount(fs),
     cloudwatchlogs(),
-    bootstrap(scope, serviceName, db, redis, secret),
+    bootstrap(scope, site, serviceName, db, redis, secret),
   )
   nodes.addSecurityGroup(sg)
 
@@ -111,6 +112,7 @@ const cloudwatchlogs = () => [
 
 const bootstrap = (
   scope: cdk.Construct,
+  site: string,
   serviceName: string,
   db: {host: string, port: string},
   redis: {host: string, port: string},
@@ -131,8 +133,8 @@ const bootstrap = (
   '  sed -i \'s/ID/ID_LIKE/g\' /opt/privx/scripts/px-issuer',
 
   `  export AWS_DEFAULT_REGION=${cdk.Aws.REGION}`,
-  '  export PRIVX_DNS_NAMES="localhost"',
-  '  export PRIVX_IP_ADDRESSES="127.0.0.1"',
+  `  export PRIVX_DNS_NAMES="${site}"`,
+  '  export PRIVX_IP_ADDRESSES=""',
   '  export PRIVX_USE_EXTERNAL_DATABASE=1',
 
   `  export PRIVX_POSTGRES_ADDRESS=${db.host}`,
