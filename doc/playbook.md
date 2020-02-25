@@ -25,6 +25,17 @@ cdk deploy privx-on-aws \
   -c cert=arn:aws:acm:us-east-1:000000000000:certificate/12345678-1234-1234-1234-123456789012
 ```
 
+**Support Native Client**
+
+The default PrivX deployment support only web experience to access target hosts. Usage of native SSH/RDP clients requires exposure of public ip address of PrivX service. Use option `-c public=on` to enable PrivX deployment to public subnet(s).
+
+```bash
+## 
+cdk deploy privx-on-aws \
+  ...
+  -c public=on
+```
+
 
 ## Corrupted deployment
 
