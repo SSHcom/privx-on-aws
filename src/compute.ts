@@ -35,11 +35,7 @@ export const EC2 = (
   topic: sns.ITopic,
 ): asg.AutoScalingGroup => {
   const fqdn = `${scope.node.tryGetContext('subdomain')}.${scope.node.tryGetContext('domain')}`
-  const associatePublicIpAddress = scope.node.tryGetContext('public') == 'on'
-  const vpcSubnets = associatePublicIpAddress
-    ? { subnetType: ec2.SubnetType.PUBLIC }
-    : { subnetType: ec2.SubnetType.PRIVATE }
-  const nodes = new asg.AutoScalingGroup(scope,  (fqdn || 'nodes'), {
+  const nodes = new asg.AutoScalingGroup(scope, (fqdn || 'nodes'), {
     desiredCapacity: 1,
     instanceType: new ec2.InstanceType('t3.small'),
     machineImage: new ec2.AmazonLinuxImage({
@@ -49,8 +45,8 @@ export const EC2 = (
     minCapacity: 0,
     role: Role(scope, secret),
     vpc,
-    associatePublicIpAddress,
-    vpcSubnets,
+    associatePublicIpAddress: true,
+    vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
     keyName: scope.node.tryGetContext('sshkey') || ''
   })
   nodes.addUserData(

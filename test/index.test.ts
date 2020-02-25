@@ -53,21 +53,9 @@ test('stack spawns required resources', () => {
   resources.forEach(x => expect(stack).to(haveResource(x)))
 })
 
-test('stack spawns required resources in public subnet', () => {
+test('stack spawns required resources with custom certificate', () => {
   const app = new cdk.App({ context: {
     domain: 'example.com',
-    public: 'on',
-  }})
-  const stack = new Service(app, 'test-stack', {
-    env: { account: '000000000000', region: 'us-east-1'},
-  })
-  resources.forEach(x => expect(stack).to(haveResource(x)))
-})
-
-test('stack spawns required resources in public subnet with custom certificate', () => {
-  const app = new cdk.App({ context: {
-    domain: 'example.com',
-    public: 'on',
     cert: 'arn:aws:acm:us-east-1:000000000000:certificate/12345678-1234-1234-1234-123456789012',
   }})
   const stack = new Service(app, 'test-stack', {
