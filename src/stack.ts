@@ -59,7 +59,7 @@ export class Service extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       retention: logs.RetentionDays.ONE_MONTH,
     })
-    const nodes = compute.EC2(this, subdomain, vpc, storageSg, dbHost, redisHost, efs, secret, pubsub)
+    const nodes = compute.EC2(this, site, subdomain, vpc, storageSg, dbHost, redisHost, efs, secret, pubsub)
 
     const lb = net.Lb(this, vpc)
     const httpsLb = net.PublicHttps(this, vpc, lb, site, zone, cert)

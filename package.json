@@ -33,7 +33,7 @@
     "typescript": "^3.7.5"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --noEmit",
     "lint": "tslint -p tsconfig.json",
     "test": "jest --coverage",
     "coveralls": "jest --coverage && cat ./coverage/lcov.info | coveralls"
