@@ -20,11 +20,13 @@ PrivX is totally free for small environments and commercial subscriptions are av
 
 To learn how PrivX works, please check out this **[video](https://www.youtube.com/watch?v=Atps1AiATVs)**.
 
-### Screenshots
-
 <p align="center">
 <img src="./doc/privx-ssh-session.gif" width="600" >
+<p align="center"><strong>SSH experience</strong></p>
+
 <img src="./doc/privx-rdp-session.gif" width="600" >
+<p align="center"><strong>RDP experience</strong></p>
+
 </p>
 
 ## Getting Started
