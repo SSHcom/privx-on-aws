@@ -22,8 +22,8 @@ To learn how PrivX works, please check out this **[video](https://www.youtube.co
 
 ### Screenshots
 
-<img src="./doc/privx-ssh-session.gif" width="100" >
-<img src="./doc/privx-rdp-session.gif" width="100" >
+<img src="./doc/privx-ssh-session.gif" width="800" >
+<img src="./doc/privx-rdp-session.gif" width="800" >
 
 ## Getting Started
 
