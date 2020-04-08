@@ -22,6 +22,14 @@ import * as sns from '@aws-cdk/aws-sns'
 import * as cdk from '@aws-cdk/core'
 import * as incident from './incident'
 
+export const Sg = (scope: cdk.Construct, vpc: ec2.IVpc): ec2.SecurityGroup => {
+  const sg = new ec2.SecurityGroup(scope, 'StorageSg', { vpc })
+  sg.connections.allowInternally(dbPort())
+  sg.connections.allowInternally(redisPort())
+  sg.connections.allowInternally(efsPort())
+  return sg
+}
+
 export const Db = (
   scope: cdk.Construct,
   databaseName: string,
@@ -39,22 +47,28 @@ export const Db = (
     masterUserPassword: secret.secretValueFromJson('secret'),
     masterUsername: databaseName,
     multiAz: false,
-    vpc
+    vpc,
+    securityGroups: [sg],
   })
-  db.connections.allowFrom(sg,
-    new ec2.Port({
-      fromPort: db.instanceEndpoint.port,
-      protocol: ec2.Protocol.TCP,
-      stringRepresentation: `RDS:${db.instanceEndpoint.port}`,
-      toPort: db.instanceEndpoint.port,
-    })
-  )
+  DbIncidents(scope, db, topic)
+  return db
+}
+
+const dbPort = () => (
+  new ec2.Port({
+    fromPort: 5432,
+    toPort: 5432,
+    protocol: ec2.Protocol.TCP,
+    stringRepresentation: 'RDS:5432',
+  })
+)
+
+const DbIncidents = (scope: cdk.Construct, db: rds.DatabaseInstance, topic: sns.ITopic) => {
   incident.fmap(incident.DbOverload(scope, db, 60), topic)
   incident.fmap(incident.DbInDebt(scope, db, 10), topic)
   incident.fmap(incident.DbOutOfDisk(scope, db, 10 * 1024 * 1024 * 1024), topic)
   incident.fmap(incident.DbOutOfMem(scope, db, 50 * 1024 * 1024), topic)
   incident.fmap(incident.DbStorageInDebt(scope, db, 25), topic)
-  return db
 }
 
 export const Redis = (
@@ -76,17 +90,17 @@ export const Redis = (
     vpcSecurityGroupIds: [sg.securityGroupId]
   })
 
-  sg.connections.allowInternally(
-    new ec2.Port({
-      fromPort: 6379,
-      protocol: ec2.Protocol.TCP,
-      stringRepresentation: 'REDIS:6379',
-      toPort: 6379,
-    })
-  )
-
   return redis
 }
+
+const redisPort = () => (
+  new ec2.Port({
+    fromPort: 6379,
+    toPort: 6379,
+    protocol: ec2.Protocol.TCP,
+    stringRepresentation: 'REDIS:6379',
+  })
+)
 
 export const Efs = (
   scope: cdk.Construct,
@@ -108,15 +122,16 @@ export const Efs = (
         }
       )
   )
-  // https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html
-  sg.connections.allowInternally(
-    new ec2.Port({
-      fromPort: 2049,
-      protocol: ec2.Protocol.TCP,
-      stringRepresentation: 'NFS:2049',
-      toPort: 2049,
-    })
-  )
-
+  
   return fs
 }
+
+const efsPort = () => (
+  // https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html
+  new ec2.Port({
+    fromPort: 2049,
+    protocol: ec2.Protocol.TCP,
+    stringRepresentation: 'NFS:2049',
+    toPort: 2049,
+  })
+)
