@@ -148,7 +148,7 @@ export const Endpoint = (
   const lb = new alb.ApplicationListenerRule(scope, 'EpHttps', {
     listener,
     pathPattern: '/*',
-    priority: Math.floor(Math.random() * 999),
+    priority: 1 + Math.floor(Math.random() * 998),
     targetGroups: [endpoint]
   })
 

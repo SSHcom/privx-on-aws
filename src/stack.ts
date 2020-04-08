@@ -14,7 +14,6 @@
 //   limitations under the License.
 //
 import * as acm from '@aws-cdk/aws-certificatemanager'
-import * as ec2 from '@aws-cdk/aws-ec2'
 import * as logs from '@aws-cdk/aws-logs'
 import * as dns from '@aws-cdk/aws-route53'
 import * as cdk from '@aws-cdk/core'
@@ -45,7 +44,7 @@ export class Service extends cdk.Stack {
 
     const vpc = net.Vpc(this, cidr)
 
-    const storageSg = new ec2.SecurityGroup(this, 'StorageSg', { vpc })
+    const storageSg = storage.Sg(this, vpc)
     const db = storage.Db(this, subdomain, vpc, storageSg, secret, pubsub)
     const dbHost = { host: db.dbInstanceEndpointAddress, port: db.dbInstanceEndpointPort }
 
