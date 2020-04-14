@@ -67,3 +67,27 @@ test('stack spawns required resources with custom certificate', () => {
     ].indexOf(x) == -1
   )).forEach(x => expect(stack).to(haveResource(x)))
 })
+
+test('stack spawns: blue default, green snapshot', () => {
+  const app = new cdk.App({ context: {
+    domain: 'example.com',
+    snapB: 'default',
+    snapG: 'arn:aws:rds:us-east-1:000000000000:snapshot:a',
+  }})
+  const stack = new Service(app, 'test-stack', {
+    env: { account: '000000000000', region: 'us-east-1'},
+  })
+  resources.forEach(x => expect(stack).to(haveResource(x)))
+})
+
+test('stack spawns: blue snapshot, green snapshot', () => {
+  const app = new cdk.App({ context: {
+    domain: 'example.com',
+    snapB: 'arn:aws:rds:us-east-1:000000000000:snapshot:b',
+    snapG: 'arn:aws:rds:us-east-1:000000000000:snapshot:a',
+  }})
+  const stack = new Service(app, 'test-stack', {
+    env: { account: '000000000000', region: 'us-east-1'},
+  })
+  resources.forEach(x => expect(stack).to(haveResource(x)))
+})
