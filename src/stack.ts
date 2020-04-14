@@ -32,21 +32,62 @@ export class Service extends cdk.Stack {
     const email = app.node.tryGetContext('email')
     const subdomain = app.node.tryGetContext('subdomain') || 'privx'
     const domain = app.node.tryGetContext('domain')
+    const snapB = app.node.tryGetContext('snapB')
+    const snapG = app.node.tryGetContext('snapG')
 
     const secret = vault.Secret(this)
     const pubsub = incident.Channel(this, email)
 
     const site = `${subdomain}.${domain}`
+    const dbHost = `${subdomain}-rds.${domain}`
     const zone = dns.HostedZone.fromLookup(this, 'HostedZone', { domainName: domain })
 
     const cert = app.node.tryGetContext('cert') ||
       (new acm.DnsValidatedCertificate(this, 'Cert', { domainName: site, hostedZone: zone })).certificateArn
 
     const vpc = net.Vpc(this, cidr)
-
     const storageSg = storage.Sg(this, vpc)
-    const db = storage.Db(this, subdomain, vpc, storageSg, secret, pubsub)
-    const dbHost = { host: db.dbInstanceEndpointAddress, port: db.dbInstanceEndpointPort }
+
+    //
+    if ((!snapG && !snapB) || snapB === 'default') {
+      const db = storage.Db(this, subdomain, vpc, storageSg, secret, pubsub)
+      net.CName(this, 'RdsB', {
+        recordName: dbHost,
+        domainName: db.dbInstanceEndpointAddress,
+        ttl: cdk.Duration.seconds(60),
+        zone,
+        weight: 100,
+        identity: `b.${dbHost}`,
+      })
+    }
+
+    //
+    if (snapB && snapB !== 'default') {
+      const blue = new cdk.Construct(this, 'Blue')
+      const db = storage.DbClone(blue, vpc, storageSg, pubsub, snapB)
+      net.CName(blue, 'RdsB', {
+        recordName: dbHost,
+        domainName: db.dbInstanceEndpointAddress,
+        ttl: cdk.Duration.seconds(60),
+        zone,
+        weight: 0,
+        identity: `b.${dbHost}`,
+      })
+    }
+
+    //
+    if (snapG) {
+      const green = new cdk.Construct(this, 'Green')
+      const db = storage.DbClone(green, vpc, storageSg, pubsub, snapG)
+      net.CName(green, 'RdsG', {
+        recordName: dbHost,
+        domainName: db.dbInstanceEndpointAddress,
+        ttl: cdk.Duration.seconds(60),
+        zone,
+        weight: 0,
+        identity: `g.${dbHost}`
+      })
+    }
 
     const redis = storage.Redis(this, vpc, storageSg)
     const redisHost = { host: redis.attrRedisEndpointAddress, port: redis.attrRedisEndpointPort}
@@ -54,7 +95,7 @@ export class Service extends cdk.Stack {
     const efs = storage.Efs(this, vpc, storageSg)
 
     new logs.LogGroup(this, 'Logs', {
-      logGroupName: '/privx',
+      logGroupName: `/${site}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       retention: logs.RetentionDays.ONE_MONTH,
     })
