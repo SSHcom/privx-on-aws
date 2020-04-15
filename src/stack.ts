@@ -47,11 +47,12 @@ export class Service extends cdk.Stack {
 
     const vpc = net.Vpc(this, cidr)
     const storageSg = storage.Sg(this, vpc)
+    const requires = new cdk.ConcreteDependable()
 
-    //
+    // TODO: deps
     if ((!snapG && !snapB) || snapB === 'default') {
       const db = storage.Db(this, subdomain, vpc, storageSg, secret, pubsub)
-      net.CName(this, 'RdsB', {
+      const cname = net.CName(this, 'RdsB', {
         recordName: dbHost,
         domainName: db.dbInstanceEndpointAddress,
         ttl: cdk.Duration.seconds(60),
@@ -59,13 +60,15 @@ export class Service extends cdk.Stack {
         weight: 100,
         identity: `b.${dbHost}`,
       })
+      requires.add(db)
+      requires.add(cname)
     }
 
     //
     if (snapB && snapB !== 'default') {
       const blue = new cdk.Construct(this, 'Blue')
       const db = storage.DbClone(blue, vpc, storageSg, pubsub, snapB)
-      net.CName(blue, 'RdsB', {
+      const cname = net.CName(blue, 'RdsB', {
         recordName: dbHost,
         domainName: db.dbInstanceEndpointAddress,
         ttl: cdk.Duration.seconds(60),
@@ -73,13 +76,15 @@ export class Service extends cdk.Stack {
         weight: 0,
         identity: `b.${dbHost}`,
       })
+      requires.add(db)
+      requires.add(cname)
     }
 
     //
     if (snapG) {
       const green = new cdk.Construct(this, 'Green')
       const db = storage.DbClone(green, vpc, storageSg, pubsub, snapG)
-      net.CName(green, 'RdsG', {
+      const cname = net.CName(green, 'RdsG', {
         recordName: dbHost,
         domainName: db.dbInstanceEndpointAddress,
         ttl: cdk.Duration.seconds(60),
@@ -87,12 +92,16 @@ export class Service extends cdk.Stack {
         weight: 0,
         identity: `g.${dbHost}`
       })
+      requires.add(db)
+      requires.add(cname)
     }
 
     const redis = storage.Redis(this, vpc, storageSg)
     const redisHost = { host: redis.attrRedisEndpointAddress, port: redis.attrRedisEndpointPort}
+    requires.add(redis)
 
     const efs = storage.Efs(this, vpc, storageSg)
+    requires.add(efs)
 
     new logs.LogGroup(this, 'Logs', {
       logGroupName: `/${site}`,
@@ -100,6 +109,7 @@ export class Service extends cdk.Stack {
       retention: logs.RetentionDays.ONE_MONTH,
     })
     const nodes = compute.EC2(this, site, subdomain, vpc, storageSg, dbHost, redisHost, efs, secret, pubsub)
+    nodes.node.addDependency(requires)
 
     const lb = net.Lb(this, vpc)
     const httpsLb = net.PublicHttps(this, vpc, lb, site, zone, cert)
