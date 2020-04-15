@@ -49,7 +49,6 @@ export class Service extends cdk.Stack {
     const storageSg = storage.Sg(this, vpc)
     const requires = new cdk.ConcreteDependable()
 
-    // TODO: deps
     if ((!snapG && !snapB) || snapB === 'default') {
       const db = storage.Db(this, subdomain, vpc, storageSg, secret, pubsub)
       const cname = net.CName(this, 'RdsB', {
