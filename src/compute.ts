@@ -28,7 +28,7 @@ export const EC2 = (
   serviceName: string,
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
-  db: {host: string, port: string},
+  db: string,
   redis: {host: string, port: string},
   fs: efs.CfnFileSystem,
   secret: vault.Secret,
@@ -43,7 +43,7 @@ export const EC2 = (
     }),
     maxCapacity: 1,
     minCapacity: 0,
-    role: Role(scope, secret),
+    role: Role(scope, secret, site),
     vpc,
     associatePublicIpAddress: true,
     vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
@@ -51,7 +51,7 @@ export const EC2 = (
   })
   nodes.addUserData(
     mount(fs),
-    cloudwatchlogs(),
+    cloudwatchlogs(site),
     bootstrap(scope, site, serviceName, db, redis, secret),
   )
   nodes.addSecurityGroup(sg)
@@ -64,7 +64,7 @@ export const EC2 = (
   return nodes
 }
 
-const Role = (scope: cdk.Construct, secret: vault.Secret): iam.Role => {
+const Role = (scope: cdk.Construct, secret: vault.Secret, site: string): iam.Role => {
   const role = new iam.Role(scope, 'Ec2IAM', {
     assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
   })
@@ -85,7 +85,7 @@ const Role = (scope: cdk.Construct, secret: vault.Secret): iam.Role => {
         'logs:PutLogEvents',
       ],
       resources: [
-        `arn:aws:logs:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:log-group:/privx:*`
+        `arn:aws:logs:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:log-group:/${site}:*`
       ],
     })
   )
@@ -102,10 +102,10 @@ const mount = (fs: efs.CfnFileSystem) => [
   `echo -e "$EFS:/ \t\t /opt/privx \t nfs \t defaults \t 0 \t 0" | tee -a /etc/fstab`,
 ].join('\n')
 
-const cloudwatchlogs = () => [
+const cloudwatchlogs = (site: string) => [
   'yum install -y awslogs',
   `sed -i \'s/region =.*/region = ${cdk.Aws.REGION}/g\' /etc/awslogs/awscli.conf`,
-  `sed -i \'s/log_group_name =.*/log_group_name = \\/privx/g\' /etc/awslogs/awslogs.conf`,
+  `sed -i \'s/log_group_name =.*/log_group_name = \\/${site}/g\' /etc/awslogs/awslogs.conf`,
   'service awslogsd start',
   'systemctl  enable awslogsd',
 ].join('\n')
@@ -114,7 +114,7 @@ const bootstrap = (
   scope: cdk.Construct,
   site: string,
   serviceName: string,
-  db: {host: string, port: string},
+  db: string,
   redis: {host: string, port: string},
   secret: vault.Secret,
 ) => [
@@ -134,11 +134,11 @@ const bootstrap = (
 
   `  export AWS_DEFAULT_REGION=${cdk.Aws.REGION}`,
   `  export PRIVX_DNS_NAMES="${site}"`,
-  '  export PRIVX_IP_ADDRESSES=""',
-  '  export PRIVX_USE_EXTERNAL_DATABASE=1',
+  '  export PRIVX_IP_ADDRESSES="127.0.0.1"',
 
-  `  export PRIVX_POSTGRES_ADDRESS=${db.host}`,
-  `  export PRIVX_POSTGRES_PORT=${db.port}`,
+  '  export PRIVX_USE_EXTERNAL_DATABASE=1',
+  `  export PRIVX_POSTGRES_ADDRESS=${db}`,
+  '  export PRIVX_POSTGRES_PORT=5432',
   `  export PRIVX_POSTGRES_USER=${serviceName}`,
   `  export PRIVX_POSTGRES_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${secret.secretArn} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
 

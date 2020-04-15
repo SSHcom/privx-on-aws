@@ -175,3 +175,21 @@ export const RedirectEndpoint = (
 
   return lb
 }
+
+//
+export interface CNameProps extends dns.CnameRecordProps {
+  readonly weight: number
+  readonly identity: string
+}
+
+export const CName = (
+  scope: cdk.Construct,
+  id: string,
+  props: CNameProps,
+): dns.CnameRecord => {
+  const cname = new dns.CnameRecord(scope, id, props)
+  const cfnCName = cname.node.defaultChild as dns.CfnRecordSet
+  cfnCName.weight = props.weight
+  cfnCName.setIdentifier = props.identity
+  return cname
+}

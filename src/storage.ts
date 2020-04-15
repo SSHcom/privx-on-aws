@@ -39,16 +39,50 @@ export const Db = (
   topic: sns.ITopic,
 ): rds.DatabaseInstance => {
   const db = new rds.DatabaseInstance(scope, 'Db', {
+    engine: rds.DatabaseInstanceEngine.POSTGRES,
+    instanceClass: new ec2.InstanceType('t3.small'),
+
     databaseName,
     deletionProtection: false,
     removalPolicy: cdk.RemovalPolicy.DESTROY,
-    engine: rds.DatabaseInstanceEngine.POSTGRES,
-    instanceClass: new ec2.InstanceType('t3.small'),
+
     masterUserPassword: secret.secretValueFromJson('secret'),
     masterUsername: databaseName,
+
     multiAz: false,
     vpc,
     securityGroups: [sg],
+
+    // backupRetention: cdk.Duration.days(30),
+    // deleteAutomatedBackups: false,
+  })
+  DbIncidents(scope, db, topic)
+  return db
+}
+
+export const DbClone = (
+  scope: cdk.Construct,
+  vpc: ec2.IVpc,
+  sg: ec2.ISecurityGroup,
+  topic: sns.ITopic,
+  snapshotIdentifier: string,
+): rds.DatabaseInstance => {
+  const db = new rds.DatabaseInstanceFromSnapshot(scope, 'Db', {
+    engine: rds.DatabaseInstanceEngine.POSTGRES,
+    instanceClass: new ec2.InstanceType('t3.small'),
+
+    snapshotIdentifier,
+    generateMasterUserPassword: false,
+
+    deletionProtection: false,
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+
+    multiAz: false,
+    vpc,
+    securityGroups: [sg],
+
+    backupRetention: cdk.Duration.days(30),
+    deleteAutomatedBackups: false,
   })
   DbIncidents(scope, db, topic)
   return db
