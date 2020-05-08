@@ -125,7 +125,7 @@ const bootstrap = (
   'ln -s /opt/privx/nginx /etc/',
   'rm -Rf /etc/machine-id',
   'systemd-machine-id-setup',
-  'export VERSION=12.1-118_7271ab44f',
+  'export VERSION=13.0-76_78d8c9b63',
   'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-${VERSION}.x86_64.rpm',
 
   'install() {',
@@ -133,6 +133,7 @@ const bootstrap = (
   '  sed -i \'s/data_folder =.*/data_folder="\\/opt\\/privx\\/audit"/g\' /opt/privx/etc/new/shared-config.toml',
   '  sed -i \'s/ID/ID_LIKE/g\' /opt/privx/scripts/px-issuer',
 
+  '  export PRIVX_NTP_SERVER=pool.ntp.org',
   `  export AWS_DEFAULT_REGION=${cdk.Aws.REGION}`,
   `  export PRIVX_DNS_NAMES="${site}"`,
   '  export PRIVX_IP_ADDRESSES="127.0.0.1"',
