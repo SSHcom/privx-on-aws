@@ -64,6 +64,26 @@ const privateSubnet = (cidrMask: number, reserved: boolean = false): ec2.SubnetC
 
 //
 //
+export const Sg = (scope: cdk.Construct, vpc: ec2.IVpc): ec2.SecurityGroup => {
+  const sg = new ec2.SecurityGroup(scope, 'StorageSg', { vpc })
+  sg.connections.allowInternally(allow('RDS', 5432))
+  // https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html
+  sg.connections.allowInternally(allow('EFS', 2049))
+  sg.connections.allowInternally(allow('REDIS', 6379))
+  return sg
+}
+
+const allow = (service: string, port: number): ec2.Port => (
+  new ec2.Port({
+    fromPort: port,
+    toPort: port,
+    protocol: ec2.Protocol.TCP,
+    stringRepresentation: `${service}:${port}`,
+  })
+)
+
+//
+//
 export const PublicHttps = (
   scope: cdk.Construct,
   vpc: ec2.IVpc,
