@@ -22,7 +22,7 @@ import * as cdk from '@aws-cdk/core'
 import * as incident from './incident'
 import * as T from './types'
 
-export type ComputeProps = T.Secret & T.Config & T.Network & T.Observable & T.Services
+export type ComputeProps = T.Secret & T.AccessPolicy & T.Config & T.Network & T.Observable & T.Services
 
 export const EC2 = (
   scope: cdk.Construct,
@@ -35,7 +35,7 @@ export const EC2 = (
     database,
     redis,
     filesystem,
-    // kmsKey,
+    allowKmsCrypto,
     secret,
     topic,
   }: ComputeProps
@@ -49,7 +49,7 @@ export const EC2 = (
     }),
     maxCapacity: 1,
     minCapacity: 0,
-    role: Role(scope, secret, site, /* kmsKey */),
+    role: Role(scope, secret, site, allowKmsCrypto),
     vpc,
     associatePublicIpAddress: true,
     vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
@@ -73,7 +73,7 @@ const Role = (
   scope: cdk.Construct,
   secret: vault.Secret,
   site: string,
-  // kmsKey: kms.IAlias,
+  allowKmsCrypto: iam.IManagedPolicy,
 ): iam.Role => {
   const role = new iam.Role(scope, 'Ec2IAM', {
     assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
@@ -100,9 +100,7 @@ const Role = (
     })
   )
 
-  role.addManagedPolicy(
-    iam.ManagedPolicy.fromManagedPolicyName(scope, 'Xxx', `allow-use-privx`)
-  )
+  role.addManagedPolicy(allowKmsCrypto)
 
   return role
 }

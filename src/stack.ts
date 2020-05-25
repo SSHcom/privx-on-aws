@@ -56,7 +56,7 @@ export class Service extends cdk.Stack {
 
     //
     // secret vault
-    const secret = vault.Secret(this, kmsKey)
+    const secret = vault.Secret(this, props.subdomain, kmsKey)
     secret.node.addDependency(requires)
 
     //
@@ -105,7 +105,7 @@ export class Service extends cdk.Stack {
       (new acm.DnsValidatedCertificate(this, 'Cert', { domainName: site, hostedZone: zone })).certificateArn
 
     const nodes = compute.EC2(this, {
-      kmsKey, secret,
+      kmsKey, allowKmsCrypto: key.accessPolicy, secret,
       vpc, sg, zone,
       topic,
       database: dbase.host,

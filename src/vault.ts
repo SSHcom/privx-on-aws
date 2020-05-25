@@ -18,8 +18,8 @@ import * as kms from '@aws-cdk/aws-kms'
 import * as cdk from '@aws-cdk/core'
 import * as c3 from '@ssh.com/c3'
 
-export const Secret = (scope: cdk.Construct, kmsKey: kms.IAlias): vault.Secret =>
-  new c3.secretsmanager.Secret(scope, 'KeyVault',
+export const Secret = (scope: cdk.Construct, name: string, kmsKey: kms.IAlias): vault.Secret =>
+  new c3.secretsmanager.Secret(scope, `${name}`,
     {
       kmsKey,
       description: 'PrivX root passwords',

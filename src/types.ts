@@ -16,6 +16,7 @@
 import * as ec2 from '@aws-cdk/aws-ec2'
 import * as sns from '@aws-cdk/aws-sns'
 import * as kms from '@aws-cdk/aws-kms'
+import * as iam from '@aws-cdk/aws-iam'
 import * as vault from '@aws-cdk/aws-secretsmanager'
 import * as dns from '@aws-cdk/aws-route53'
 
@@ -93,7 +94,10 @@ export interface Secret {
 
   /** database secrets */
   readonly secret: vault.Secret
+}
 
+export interface AccessPolicy {
+  readonly allowKmsCrypto: iam.IManagedPolicy
 }
 
 /**
