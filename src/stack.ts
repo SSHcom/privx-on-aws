@@ -16,103 +16,109 @@
 import * as acm from '@aws-cdk/aws-certificatemanager'
 import * as logs from '@aws-cdk/aws-logs'
 import * as dns from '@aws-cdk/aws-route53'
+import * as ec2 from '@aws-cdk/aws-ec2'
+import * as iam from '@aws-cdk/aws-iam'
 import * as cdk from '@aws-cdk/core'
+import * as c3 from '@ssh.com/c3'
 import * as compute from './compute'
 import * as incident from './incident'
 import * as net from './net'
 import * as storage from './storage'
 import * as vault from './vault'
+import * as db from './db'
+import * as T from './types'
+
+
+export type ServiceProps = cdk.StackProps & T.Config
 
 //
 //
 export class Service extends cdk.Stack {
-  constructor(app: cdk.App, id: string, props: cdk.StackProps) {
+  constructor(app: cdk.App, id: string, props: ServiceProps) {
     super(app, id, props)
-    const cidr = app.node.tryGetContext('cidr') || '10.0.0.0/16'
-    const email = app.node.tryGetContext('email')
-    const subdomain = app.node.tryGetContext('subdomain') || 'privx'
-    const domain = app.node.tryGetContext('domain')
-    const snapB = app.node.tryGetContext('snapB')
-    const snapG = app.node.tryGetContext('snapG')
 
-    const secret = vault.Secret(this)
-    const pubsub = incident.Channel(this, email)
-
-    const site = `${subdomain}.${domain}`
-    const dbHost = `${subdomain}-rds.${domain}`
-    const zone = dns.HostedZone.fromLookup(this, 'HostedZone', { domainName: domain })
-
-    const cert = app.node.tryGetContext('cert') ||
-      (new acm.DnsValidatedCertificate(this, 'Cert', { domainName: site, hostedZone: zone })).certificateArn
-
-    const vpc = net.Vpc(this, cidr)
-    const storageSg = storage.Sg(this, vpc)
+    //
+    // core
     const requires = new cdk.ConcreteDependable()
-
-    if ((!snapG && !snapB) || snapB === 'default') {
-      const db = storage.Db(this, subdomain, vpc, storageSg, secret, pubsub)
-      const cname = net.CName(this, 'RdsB', {
-        recordName: dbHost,
-        domainName: db.dbInstanceEndpointAddress,
-        ttl: cdk.Duration.seconds(60),
-        zone,
-        weight: 100,
-        identity: `b.${dbHost}`,
-      })
-      requires.add(db)
-      requires.add(cname)
-    }
+    const vpc = net.Vpc(this, props.cidr)
+    const sg = net.Sg(this, vpc)
+    const zone = dns.HostedZone.fromLookup(this, 'HostedZone', { domainName: props.domain })
+    const topic = incident.Channel(this, props.email)
 
     //
-    if (snapB && snapB !== 'default') {
-      const blue = new cdk.Construct(this, 'Blue')
-      const db = storage.DbClone(blue, vpc, storageSg, pubsub, snapB)
-      const cname = net.CName(blue, 'RdsB', {
-        recordName: dbHost,
-        domainName: db.dbInstanceEndpointAddress,
-        ttl: cdk.Duration.seconds(60),
-        zone,
-        weight: 0,
-        identity: `b.${dbHost}`,
-      })
-      requires.add(db)
-      requires.add(cname)
-    }
+    // encryption
+    const key = new c3.kms.SymmetricKey(this, props.subdomain)
+    key.grantToService(
+      new iam.ServicePrincipal(`logs.${cdk.Aws.REGION}.amazonaws.com`)
+    )
+    const kmsKey = key.alias
+    requires.add(key)
 
     //
-    if (snapG) {
-      const green = new cdk.Construct(this, 'Green')
-      const db = storage.DbClone(green, vpc, storageSg, pubsub, snapG)
-      const cname = net.CName(green, 'RdsG', {
-        recordName: dbHost,
-        domainName: db.dbInstanceEndpointAddress,
-        ttl: cdk.Duration.seconds(60),
-        zone,
-        weight: 0,
-        identity: `g.${dbHost}`
-      })
-      requires.add(db)
-      requires.add(cname)
-    }
+    // secret vault
+    const secret = vault.Secret(this, props.subdomain, kmsKey)
+    secret.node.addDependency(requires)
 
-    const redis = storage.Redis(this, vpc, storageSg)
-    const redisHost = { host: redis.attrRedisEndpointAddress, port: redis.attrRedisEndpointPort}
-    requires.add(redis)
-
-    const efs = storage.Efs(this, vpc, storageSg)
-    requires.add(efs)
-
-    new logs.LogGroup(this, 'Logs', {
-      logGroupName: `/${site}`,
+    //
+    //
+    const services = new cdk.ConcreteDependable()
+    const lg = new c3.logs.LogGroup(this, 'Logs', {
+      kmsKey,
+      logGroupName: `/${props.subdomain}.${props.domain}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       retention: logs.RetentionDays.ONE_MONTH,
     })
-    const nodes = compute.EC2(this, site, subdomain, vpc, storageSg, dbHost, redisHost, efs, secret, pubsub)
+    lg.node.addDependency(requires)
+    services.add(lg)
+
+    //
+    // database
+    const dbase = new db.Db(this, 'Db', {
+      kmsKey, secret,
+      vpc, sg, zone,
+      topic,
+      ...props
+    })
+    dbase.node.addDependency(requires)
+    services.add(dbase)
+
+    //
+    // file system storage
+    const efs = new c3.efs.FileSystem(this, 'Efs', {
+      vpc,
+      securityGroup: sg,
+      vpcSubnets: {subnetType: ec2.SubnetType.PRIVATE},
+      kmsKey,
+    })
+    efs.node.addDependency(requires)
+    services.add(efs)
+
+    //
+    // global cache
+    const redis = storage.Redis(this, vpc, sg)
+    services.add(redis)
+
+    //
+    // compute
+    const site = `${props.subdomain}.${props.domain}`
+    const cert = app.node.tryGetContext('cert') ||
+      (new acm.DnsValidatedCertificate(this, 'Cert', { domainName: site, hostedZone: zone })).certificateArn
+
+    const nodes = compute.EC2(this, {
+      kmsKey, allowKmsCrypto: key.accessPolicy, secret,
+      vpc, sg, zone,
+      topic,
+      database: dbase.host,
+      redis: redis.attrRedisEndpointAddress,
+      filesystem: efs.fileSystemId,
+      ...props
+    })
     nodes.node.addDependency(requires)
+    nodes.node.addDependency(services)
 
     const lb = net.Lb(this, vpc)
     const httpsLb = net.PublicHttps(this, vpc, lb, site, zone, cert)
-    net.Endpoint(this, vpc, httpsLb, nodes, pubsub)
+    net.Endpoint(this, vpc, httpsLb, nodes, topic)
 
     const httpLb = net.PublicHttp(this, vpc, lb)
     net.RedirectEndpoint(this, httpLb)

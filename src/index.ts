@@ -16,6 +16,8 @@
 import * as cdk from '@aws-cdk/core'
 import * as stack from './stack'
 
+//
+// Global config
 const app = new cdk.App()
 const spec = {
   env: {
@@ -23,7 +25,20 @@ const spec = {
     region: process.env.CDK_DEFAULT_REGION,
   }
 }
+const stackName = app.node.tryGetContext('name') || 'privx-on-aws'
+const uniqueName = app.node.tryGetContext('subdomain') || 'privx'
+const cidr = app.node.tryGetContext('cidr') || '10.0.0.0/16'
+const email = app.node.tryGetContext('email')
+const subdomain = app.node.tryGetContext('subdomain') || 'privx'
+const domain = app.node.tryGetContext('domain')
+const snapB = app.node.tryGetContext('snapB')
+const snapG = app.node.tryGetContext('snapG')
+const cert = app.node.tryGetContext('cert')
 
-const name = app.node.tryGetContext('name') || 'privx-on-aws'
-new stack.Service(app, name, { ...spec })
+//
+// Application stack
+new stack.Service(app, stackName, {
+  uniqueName, cidr, email, subdomain, domain, snapB, snapG, cert,
+  ...spec
+})
 app.synth()
