@@ -48,20 +48,23 @@ export class Db extends cdk.Construct {
 
     // Initial database deployment
     if ((!snapG && !snapB) || snapB === 'default' || snapG === 'default') {
-      const db = this.buildDatabase({ ...props, name: subdomain })
-      this.cnameDatabase('b', db, props)
+      const spec = { ...props, name: subdomain, tint: 'b' }
+      const db = this.buildDatabase(spec)
+      this.cnameDatabase(db, spec)
     }
 
     // Blue deployment from snapshot
     if (snapB && snapB !== 'default') {
-      const db = this.cloneDatabase({ ...props, name: subdomain, snapshot: snapB })
-      this.cnameDatabase('b', db, props)
+      const spec = { ...props, name: subdomain, tint: 'b', snapshot: snapB }
+      const db = this.cloneDatabase(spec)
+      this.cnameDatabase(db, spec)
     }
 
     // Green deployment from snapshot
     if (snapG && snapG !== 'default') {
-      const db = this.cloneDatabase({ ...props, name: subdomain, snapshot: snapB })
-      this.cnameDatabase('g', db, props)
+      const spec = { ...props, name: subdomain, tint: 'g', snapshot: snapG }
+      const db = this.cloneDatabase(spec)
+      this.cnameDatabase(db, spec)
     }
   }
 
@@ -96,9 +99,10 @@ export class Db extends cdk.Construct {
   cloneDatabase({
     vpc,
     sg,
+    tint,
     snapshot,
   }: DbInstanceProps): rds.DatabaseInstance {
-    return new rds.DatabaseInstanceFromSnapshot(this, 'Dsnap', {
+    return new rds.DatabaseInstanceFromSnapshot(this, `Dsnap-${tint}`, {
       engine: rds.DatabaseInstanceEngine.POSTGRES,
       instanceClass: new ec2.InstanceType('t3.small'),
   
@@ -117,9 +121,10 @@ export class Db extends cdk.Construct {
     })
   }
 
-  cnameDatabase(tint: string, db: rds.DatabaseInstance, {
+  cnameDatabase(db: rds.DatabaseInstance, {
     zone,
-  }: DbProps) {
+    tint,
+  }: DbInstanceProps) {
     net.CName(this, `Rds${tint}`, {
       recordName:  this.host,
       domainName: db.dbInstanceEndpointAddress,

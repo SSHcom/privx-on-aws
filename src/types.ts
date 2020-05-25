@@ -81,6 +81,9 @@ export interface Database {
   /** Unique name of the database */
   readonly name: string,
 
+  /** color of database stack */
+  readonly tint: string
+
   /** database snapshot */
   readonly snapshot?: string
 }

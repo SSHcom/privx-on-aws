@@ -45,21 +45,26 @@ const resources: string[] = [
   'AWS::CloudWatch::Alarm',
 ]
 
+const spec = {
+  env: { account: '000000000000', region: 'us-east-1'},
+  uniqueName: 'privx',
+  cidr: '10.1.0.0/16',
+  email: 'e.x@example.com',
+  subdomain: 'subdomain',
+  domain: 'example.com',
+}
+
 test('stack spawns required resources', () => {
   const app = new cdk.App({ context: { domain: 'example.com' }})
-  const stack = new Service(app, 'test-stack', {
-    env: { account: '000000000000', region: 'us-east-1'},
-  })
+  const stack = new Service(app, 'test-stack', spec)
   resources.forEach(x => expect(stack).to(haveResource(x)))
 })
 
 test('stack spawns required resources with custom certificate', () => {
-  const app = new cdk.App({ context: {
-    domain: 'example.com',
-    cert: 'arn:aws:acm:us-east-1:000000000000:certificate/12345678-1234-1234-1234-123456789012',
-  }})
+  const app = new cdk.App()
   const stack = new Service(app, 'test-stack', {
-    env: { account: '000000000000', region: 'us-east-1'},
+    cert: 'arn:aws:acm:us-east-1:000000000000:certificate/12345678-1234-1234-1234-123456789012',
+    ...spec,
   })
   resources.filter(x => (
     [
@@ -69,25 +74,21 @@ test('stack spawns required resources with custom certificate', () => {
 })
 
 test('stack spawns: blue default, green snapshot', () => {
-  const app = new cdk.App({ context: {
-    domain: 'example.com',
+  const app = new cdk.App()
+  const stack = new Service(app, 'test-stack', {
     snapB: 'default',
     snapG: 'arn:aws:rds:us-east-1:000000000000:snapshot:a',
-  }})
-  const stack = new Service(app, 'test-stack', {
-    env: { account: '000000000000', region: 'us-east-1'},
+    ...spec,
   })
   resources.forEach(x => expect(stack).to(haveResource(x)))
 })
 
 test('stack spawns: blue snapshot, green snapshot', () => {
-  const app = new cdk.App({ context: {
-    domain: 'example.com',
+  const app = new cdk.App()
+  const stack = new Service(app, 'test-stack', {
     snapB: 'arn:aws:rds:us-east-1:000000000000:snapshot:b',
     snapG: 'arn:aws:rds:us-east-1:000000000000:snapshot:a',
-  }})
-  const stack = new Service(app, 'test-stack', {
-    env: { account: '000000000000', region: 'us-east-1'},
+    ...spec,
   })
   resources.forEach(x => expect(stack).to(haveResource(x)))
 })
