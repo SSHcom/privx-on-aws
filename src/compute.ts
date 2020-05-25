@@ -16,7 +16,6 @@
 import * as asg from '@aws-cdk/aws-autoscaling'
 import * as ec2 from '@aws-cdk/aws-ec2'
 import * as iam from '@aws-cdk/aws-iam'
-// import * as kms from '@aws-cdk/aws-kms'
 import * as vault from '@aws-cdk/aws-secretsmanager'
 import * as cdk from '@aws-cdk/core'
 import * as incident from './incident'
@@ -143,7 +142,7 @@ const bootstrap = (
   'install() {',
   '  export PRIVX_DISABLE_SELINUX=1',
   '  sed -i \'s/data_folder =.*/data_folder="\\/opt\\/privx\\/audit"/g\' /opt/privx/etc/new/shared-config.toml',
-  // only required by 11.0
+  // only required at 11.0
   // '  sed -i \'s/ID/ID_LIKE/g\' /opt/privx/scripts/px-issuer',
 
   '  export PRIVX_NTP_SERVER=pool.ntp.org',

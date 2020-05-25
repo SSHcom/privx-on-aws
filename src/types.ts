@@ -22,7 +22,7 @@ import * as dns from '@aws-cdk/aws-route53'
 
 /**
 
-Configuration
+Config defines configurable features during the deployment
 */
 export interface Config {
   /** Unique Name of PrivX deployment */
@@ -53,7 +53,7 @@ export interface Config {
 
 /**
 
-Backbone Network specification 
+Network specifies backbone infrastructure 
 */
 export interface Network {
   /** AWS VPC */
@@ -67,7 +67,8 @@ export interface Network {
 }
 
 /**
- 
+
+Observable defines integration points for service control
 */
 export interface Observable {
   /** CloudWatch notifications */
@@ -75,7 +76,8 @@ export interface Observable {
 }
 
 /**
- 
+
+Database defines properties of DB
 */
 export interface Database {
   /** Unique name of the database */
@@ -89,7 +91,8 @@ export interface Database {
 }
 
 /**
- 
+
+Secret vault(s)
 */
 export interface Secret {
   /** reference to encryption key */
@@ -104,7 +107,8 @@ export interface AccessPolicy {
 }
 
 /**
- 
+
+Services defines endpoint for Backing services
 */
 export interface Services {
   /** database endpoint */
