@@ -144,10 +144,10 @@ export class Db extends cdk.Construct {
     const MB = 1024 * 1024
     const GB = 1024 * 1024 * 1024
 
-    incident.fmap(incident.DbOverload(this, db, 60), topic)
-    incident.fmap(incident.DbInDebt(this, db, 10), topic)
-    incident.fmap(incident.DbOutOfDisk(this, db, 10 * GB), topic)
-    incident.fmap(incident.DbOutOfMem(this, db, 50 * MB), topic)
-    incident.fmap(incident.DbStorageInDebt(this, db, 25), topic)  
+    incident.fmap(incident.DbOverload(db, db, 60), topic)
+    incident.fmap(incident.DbInDebt(db, db, 10), topic)
+    incident.fmap(incident.DbOutOfDisk(db, db, 10 * GB), topic)
+    incident.fmap(incident.DbOutOfMem(db, db, 50 * MB), topic)
+    incident.fmap(incident.DbStorageInDebt(db, db, 25), topic)  
   }
 }
