@@ -63,7 +63,7 @@ export class Service extends cdk.Stack {
     //
     const services = new cdk.ConcreteDependable()
     const lg = new c3.logs.LogGroup(this, 'Logs', {
-      kmsKey: kmsKey,
+      kmsKey,
       logGroupName: `/${props.subdomain}.${props.domain}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       retention: logs.RetentionDays.ONE_MONTH,

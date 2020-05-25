@@ -51,6 +51,7 @@ export class Db extends cdk.Construct {
       const spec = { ...props, name: subdomain, tint: 'b' }
       const db = this.buildDatabase(spec)
       this.cnameDatabase(db, spec)
+      this.incidents(db, spec)
     }
 
     // Blue deployment from snapshot
@@ -58,6 +59,7 @@ export class Db extends cdk.Construct {
       const spec = { ...props, name: subdomain, tint: 'b', snapshot: snapB }
       const db = this.cloneDatabase(spec)
       this.cnameDatabase(db, spec)
+      this.incidents(db, spec)
     }
 
     // Green deployment from snapshot
@@ -65,6 +67,7 @@ export class Db extends cdk.Construct {
       const spec = { ...props, name: subdomain, tint: 'g', snapshot: snapG }
       const db = this.cloneDatabase(spec)
       this.cnameDatabase(db, spec)
+      this.incidents(db, spec)
     }
   }
 

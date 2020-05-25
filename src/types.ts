@@ -20,85 +20,75 @@ import * as iam from '@aws-cdk/aws-iam'
 import * as vault from '@aws-cdk/aws-secretsmanager'
 import * as dns from '@aws-cdk/aws-route53'
 
-/**
-
-Config defines configurable features during the deployment
-*/
+//
+// Config defines configurable features during the deployment
 export interface Config {
-  /** Unique Name of PrivX deployment */
+  // Unique Name of PrivX deployment
   readonly uniqueName: string
 
-  /** Unique class A network CIDR block for VPC */
+  // Unique class A network CIDR block for VPC
   readonly cidr: string
 
-  /** Unique name of your PrivX instance. */
+  // Unique name of your PrivX instance.
   readonly subdomain: string
 
-  /** Domain, Hosted Zone must be available in deployment account */
+  // Domain, Hosted Zone must be available in deployment account
   readonly domain: string
 
-  /** address to deliver CloudWatch alerts */
+  // address to deliver CloudWatch alerts
   readonly email: string
 
-  /** RDS Snapshot for blue deployment */
+  // RDS Snapshot for blue deployment
   readonly snapB?: string
 
-  /** RDS Snapshot for green deployment */
+  // RDS Snapshot for green deployment
   readonly snapG?: string
 
-  /** custom TLS certificate */
+  // custom TLS certificate
   readonly cert?: string
 }
 
 
-/**
-
-Network specifies backbone infrastructure 
-*/
+//
+// Network specifies backbone infrastructure
 export interface Network {
-  /** AWS VPC */
+  // AWS VPC
   readonly vpc: ec2.IVpc,
 
-  /** Network Security Group */
+  // Network Security Group
   readonly sg: ec2.ISecurityGroup,
 
-  /** Route53 Hosting Zone of application */
+  // Route53 Hosting Zone of application
   readonly zone: dns.IHostedZone
 }
 
-/**
-
-Observable defines integration points for service control
-*/
+//
+// Observable defines integration points for service control
 export interface Observable {
-  /** CloudWatch notifications */
+  // CloudWatch notifications
   readonly topic: sns.ITopic
 }
 
-/**
-
-Database defines properties of DB
-*/
+//
+// Database defines properties of DB
 export interface Database {
-  /** Unique name of the database */
+  // Unique name of the database
   readonly name: string,
 
-  /** color of database stack */
+  // color of database stack
   readonly tint: string
 
-  /** database snapshot */
+  // database snapshot
   readonly snapshot?: string
 }
 
-/**
-
-Secret vault(s)
-*/
+//
+// Secret vault(s)
 export interface Secret {
-  /** reference to encryption key */
+  // reference to encryption key
   readonly kmsKey: kms.IAlias
 
-  /** database secrets */
+  // database secrets
   readonly secret: vault.Secret
 }
 
@@ -106,17 +96,15 @@ export interface AccessPolicy {
   readonly allowKmsCrypto: iam.IManagedPolicy
 }
 
-/**
-
-Services defines endpoint for Backing services
-*/
+//
+// Services defines endpoint for Backing services
 export interface Services {
-  /** database endpoint */
+  // database endpoint
   readonly database: string
 
-  /** redist endpoint */
+  // redis endpoint
   readonly redis: string
 
-  /** file system endpoint */
+  // file system endpoint
   readonly filesystem: string
 }
