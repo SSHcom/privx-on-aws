@@ -100,9 +100,8 @@ export class Service extends cdk.Stack {
 
     //
     // compute
-    const site = `${props.subdomain}.${props.domain}`
     const cert = app.node.tryGetContext('cert') ||
-      (new acm.DnsValidatedCertificate(this, 'Cert', { domainName: site, hostedZone: zone })).certificateArn
+      (new acm.DnsValidatedCertificate(this, 'Cert', { domainName: `*.${props.domain}`, hostedZone: zone })).certificateArn
 
     const nodes = compute.EC2(this, {
       kmsKey, allowKmsCrypto: key.accessPolicy, secret,
@@ -117,6 +116,7 @@ export class Service extends cdk.Stack {
     nodes.node.addDependency(services)
 
     const lb = net.Lb(this, vpc)
+    const site = `${props.subdomain}.${props.domain}`
     const httpsLb = net.PublicHttps(this, vpc, lb, site, zone, cert)
     net.Endpoint(this, vpc, httpsLb, nodes, topic)
 
