@@ -53,8 +53,8 @@ export const HighAvailability = (scope: cdk.Construct, target: alb.ApplicationTa
       // TODO: 'https://github.com/SSHcom/privx-on-aws/doc/playbook/high-availability.md',
     ].join('\n'),
     comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
-    datapointsToAlarm: 4,
-    evaluationPeriods: 4,
+    datapointsToAlarm: 1,
+    evaluationPeriods: 1,
     metric: new cloudwatch.Metric({
       dimensions: {
         LoadBalancer: target.firstLoadBalancerFullName,
@@ -64,7 +64,7 @@ export const HighAvailability = (scope: cdk.Construct, target: alb.ApplicationTa
       namespace: 'AWS/ApplicationELB',
       statistic: 'Minimum',
     }),
-    period: cdk.Duration.seconds(60),
+    period: cdk.Duration.minutes(5),
     threshold,
     treatMissingData: cloudwatch.TreatMissingData.BREACHING,
   })
