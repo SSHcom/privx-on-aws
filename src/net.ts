@@ -152,11 +152,11 @@ export const Endpoint = (
   const endpoint = new alb.ApplicationTargetGroup(scope, 'Ep', {
     healthCheck: {
       healthyHttpCodes: '200',
-      interval: cdk.Duration.seconds(10),
+      interval: cdk.Duration.seconds(60),
       path: '/monitor-service/api/v1/instance/status',
       protocol: alb.Protocol.HTTPS,
       timeout: cdk.Duration.seconds(5),
-      unhealthyThresholdCount: 2,
+      unhealthyThresholdCount: 5,
     },
     port: 443,
     stickinessCookieDuration: cdk.Duration.hours(24),
