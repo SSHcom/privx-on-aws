@@ -81,7 +81,7 @@ export class Db extends cdk.Construct {
     return new c3.rds.DatabaseInstance(this, 'Dbase', {
       kmsKey,
       engine: rds.DatabaseInstanceEngine.POSTGRES,
-      instanceClass: new ec2.InstanceType('t3.small'),
+      instanceType: new ec2.InstanceType('t3.small'),
   
       databaseName: name,
       deletionProtection: false,
@@ -107,7 +107,7 @@ export class Db extends cdk.Construct {
   }: DbInstanceProps): rds.DatabaseInstance {
     return new rds.DatabaseInstanceFromSnapshot(this, `Dsnap-${tint}`, {
       engine: rds.DatabaseInstanceEngine.POSTGRES,
-      instanceClass: new ec2.InstanceType('t3.small'),
+      instanceType: new ec2.InstanceType('t3.small'),
   
       snapshotIdentifier: snapshot as string,
       generateMasterUserPassword: false,
