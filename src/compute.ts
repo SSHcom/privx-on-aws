@@ -52,7 +52,7 @@ export const EC2 = (
     vpc,
     associatePublicIpAddress: true,
     vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
-    keyName: scope.node.tryGetContext('sshkey') || '',
+    keyName: scope.node.tryGetContext('sshkey') || undefined,
     healthCheck: asg.HealthCheck.elb({grace: cdk.Duration.minutes(15)}),
   })
   nodes.addUserData(
