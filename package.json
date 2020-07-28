@@ -36,7 +36,6 @@
   "scripts": {
     "build": "tsc --noEmit",
     "lint": "tslint -p tsconfig.json",
-    "test": "jest --no-cache --coverage",
-    "coveralls": "jest --coverage && cat ./coverage/lcov.info | coveralls"
+    "test": "jest --no-cache --coverage"
   }
 }
