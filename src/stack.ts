@@ -89,6 +89,7 @@ export class Service extends cdk.Stack {
       securityGroup: sg,
       vpcSubnets: {subnetType: ec2.SubnetType.PRIVATE},
       kmsKey,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     })
     efs.node.addDependency(requires)
     services.add(efs)
