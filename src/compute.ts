@@ -137,7 +137,7 @@ const bootstrap = (
   'ln -s /opt/privx/nginx /etc/',
   'rm -Rf /etc/machine-id',
   'systemd-machine-id-setup',
-  'export VERSION=14.0-85_b763e91b6',
+  'export VERSION=14.1-128_91121b910',
   'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-${VERSION}.x86_64.rpm',
 
   'install() {',
