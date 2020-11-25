@@ -34,6 +34,7 @@ export const EC2 = (
     database,
     redis,
     filesystem,
+    tlsCertificate,
     allowKmsCrypto,
     secret,
     topic,
@@ -58,7 +59,7 @@ export const EC2 = (
   nodes.addUserData(
     mount(filesystem),
     cloudwatchlogs(site),
-    bootstrap(scope, site, uniqueName, database, redis, secret),
+    bootstrap(scope, site, uniqueName, database, redis, secret, tlsCertificate),
   )
   nodes.addSecurityGroup(sg)
   cdk.Tag.add(nodes, 'domain', site)
@@ -129,6 +130,7 @@ const bootstrap = (
   db: string,
   redis: string,
   secret: vault.Secret,
+  tlsCertificate: string,
 ) => [
   'amazon-linux-extras install epel',
   'yum -y update',
@@ -137,7 +139,7 @@ const bootstrap = (
   'ln -s /opt/privx/nginx /etc/',
   'rm -Rf /etc/machine-id',
   'systemd-machine-id-setup',
-  'export VERSION=14.1-128_91121b910',
+  'export VERSION=16.0-75_694095ecd',
   'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-${VERSION}.x86_64.rpm',
 
   'install() {',
@@ -171,6 +173,8 @@ const bootstrap = (
 
   `  sed -i '/privx_instance_name = ""/c\privx_instance_name = "${scope.node.tryGetContext('subdomain')}"' /opt/privx/etc/new/shared-config.toml`,
   '  /opt/privx/scripts/postinstall.sh',
+  `  aws acm get-certificate --certificate-arn ${tlsCertificate} | jq -r .CertificateChain > /opt/privx/etc/alb-trust.pem`,
+  '  /opt/privx/scripts/init_nginx.sh update-trust /opt/privx/etc/alb-trust.pem',
   '}',
 
   'config() {',
