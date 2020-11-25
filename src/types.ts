@@ -107,4 +107,7 @@ export interface Services {
 
   // file system endpoint
   readonly filesystem: string
+
+  // tls certificate
+  readonly tlsCertificate: string
 }
