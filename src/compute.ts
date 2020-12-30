@@ -49,7 +49,7 @@ export const EC2 = (
     }),
     maxCapacity: 1,
     minCapacity: 0,
-    role: Role(scope, secret, site, allowKmsCrypto),
+    role: Role(scope, secret, site, allowKmsCrypto, tlsCertificate),
     vpc,
     associatePublicIpAddress: true,
     vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
@@ -75,6 +75,7 @@ const Role = (
   secret: vault.Secret,
   site: string,
   allowKmsCrypto: iam.IManagedPolicy,
+  tlsCertificate: string,
 ): iam.Role => {
   const role = new iam.Role(scope, 'Ec2IAM', {
     assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
@@ -84,6 +85,13 @@ const Role = (
     new iam.PolicyStatement({
       actions: ['secretsmanager:GetSecretValue'],
       resources: [secret.secretArn],
+    })
+  )
+  
+  role.addToPolicy(
+    new iam.PolicyStatement({
+      actions: ['acm:GetCertificate'],
+      resources: [tlsCertificate],
     })
   )
 
