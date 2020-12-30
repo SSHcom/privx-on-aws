@@ -41,6 +41,8 @@ export const EC2 = (
   }: ComputeProps
 ): asg.AutoScalingGroup => {
   const site = `${subdomain}.${domain}`
+  const role = Role(scope, secret, site, tlsCertificate, allowKmsCrypto)
+
   const nodes = new asg.AutoScalingGroup(scope, site, {
     desiredCapacity: 1,
     instanceType: new ec2.InstanceType('t3.small'),
@@ -49,7 +51,7 @@ export const EC2 = (
     }),
     maxCapacity: 1,
     minCapacity: 0,
-    role: Role(scope, secret, site, allowKmsCrypto, tlsCertificate),
+    role,
     vpc,
     associatePublicIpAddress: true,
     vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
@@ -74,45 +76,45 @@ const Role = (
   scope: cdk.Construct,
   secret: vault.Secret,
   site: string,
-  allowKmsCrypto: iam.IManagedPolicy,
   tlsCertificate: string,
+  allowKmsCrypto: iam.IManagedPolicy,
 ): iam.Role => {
   const role = new iam.Role(scope, 'Ec2IAM', {
     assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
   })
 
-  role.addToPolicy(
-    new iam.PolicyStatement({
-      actions: ['secretsmanager:GetSecretValue'],
-      resources: [secret.secretArn],
-    })
-  )
-  
-  role.addToPolicy(
-    new iam.PolicyStatement({
-      actions: ['acm:GetCertificate'],
-      resources: [tlsCertificate],
-    })
-  )
-
-  role.addToPolicy(
-    new iam.PolicyStatement({
-      actions: [
-        'logs:CreateLogStream',
-        'logs:DescribeLogStreams',
-        'logs:CreateLogGroup',
-        'logs:PutLogEvents',
-      ],
-      resources: [
-        `arn:aws:logs:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:log-group:/${site}:*`
-      ],
-    })
-  )
-
+  role.addToPolicy(allowKeyVaultRead(secret))
+  role.addToPolicy(allowCertificateRead(tlsCertificate))
+  role.addToPolicy(allowLogStreamWrite(site))
   role.addManagedPolicy(allowKmsCrypto)
 
   return role
 }
+
+const allowKeyVaultRead = (secret: vault.Secret): iam.PolicyStatement =>
+  new iam.PolicyStatement({
+    actions: ['secretsmanager:GetSecretValue'],
+    resources: [secret.secretArn],
+  })
+
+const allowCertificateRead = (tlsCertificate: string): iam.PolicyStatement =>
+  new iam.PolicyStatement({
+    actions: ['acm:GetCertificate'],
+    resources: [tlsCertificate],
+  })
+
+const allowLogStreamWrite = (site: string): iam.PolicyStatement =>
+  new iam.PolicyStatement({
+    actions: [
+      'logs:CreateLogStream',
+      'logs:DescribeLogStreams',
+      'logs:CreateLogGroup',
+      'logs:PutLogEvents',
+    ],
+    resources: [
+      `arn:aws:logs:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:log-group:/${site}:*`
+    ],
+  })
 
 const mount = (filesystem: string) => [
   'PATH=$PATH:/usr/local/bin',
