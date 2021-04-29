@@ -1,4 +1,4 @@
-# PrivX Free - Just-in-time Access Management
+# PrivX - Just-in-time Access Management
 
 
 > Available as Infrastructure as a Code on AWS for fast deployment.
@@ -17,7 +17,7 @@ Having seen how permanent passwords and left-behind and forgotten SSH keys enabl
 
 PrivX automates the process of granting and revoking access by integrating & fetching identities and roles from your identity management system (LDAP, AD etc) and ensures your engineering and admin staff have one-click access to the right infrastructure resources at the right access level. You will also get full audit trail and monitoring - vital if you are handling sensitive data or for example open access for third parties to your environment.
 
-PrivX is totally free for small environments and commercial subscriptions are available for more serious use. Download **[Your PrivX Free](https://info.ssh.com/privx-free-access-management-software)**.
+Learn more about PrivX and **[get your trial license](https://www.ssh.com/products/privx/try-buy)**.
 
 To learn how PrivX works, please check out this **[video](https://www.youtube.com/watch?v=Atps1AiATVs)**.
 
