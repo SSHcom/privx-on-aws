@@ -3,7 +3,6 @@ import * as iam from '@aws-cdk/aws-iam'
 import * as kms from '@aws-cdk/aws-kms'
 
 export class AccessibleKmsKey {
-  public readonly alias: string
   public readonly key: kms.IKey
   public readonly accessPolicy: iam.IManagedPolicy
   public readonly encryptPolicy: iam.IManagedPolicy
@@ -11,7 +10,6 @@ export class AccessibleKmsKey {
 
   constructor(scope: cdk.Construct, alias: string) {
 
-    this.alias = alias
     this.key = new kms.Key(scope, 'PrivxKey', {
       alias,
       enableKeyRotation: true,
