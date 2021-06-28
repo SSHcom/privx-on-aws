@@ -17,9 +17,9 @@ import * as acm from '@aws-cdk/aws-certificatemanager'
 import * as logs from '@aws-cdk/aws-logs'
 import * as dns from '@aws-cdk/aws-route53'
 import * as ec2 from '@aws-cdk/aws-ec2'
-import * as iam from '@aws-cdk/aws-iam'
+import * as efs from '@aws-cdk/aws-efs'
 import * as cdk from '@aws-cdk/core'
-import * as c3 from '@ssh.com/c3'
+import { AccessibleKmsKey } from './kms-with-access'
 import * as compute from './compute'
 import * as incident from './incident'
 import * as net from './net'
@@ -47,12 +47,11 @@ export class Service extends cdk.Stack {
 
     //
     // encryption
-    const key = new c3.kms.SymmetricKey(this, props.subdomain)
-    key.grantToService(
-      new iam.ServicePrincipal(`logs.${cdk.Aws.REGION}.amazonaws.com`)
-    )
-    const kmsKey = key.alias
-    requires.add(key)
+    const keyAlias = `privx-key-${props.subdomain}`
+    const key  = new AccessibleKmsKey(this, keyAlias)
+    const kmsKey = key.key
+    key.grantToService(`logs.${cdk.Aws.REGION}.amazonaws.com`)
+    requires.add(kmsKey)
 
     //
     // secret vault
@@ -62,8 +61,8 @@ export class Service extends cdk.Stack {
     //
     //
     const services = new cdk.ConcreteDependable()
-    const lg = new c3.logs.LogGroup(this, 'Logs', {
-      kmsKey,
+    const lg = new logs.LogGroup(this, 'Logs', {
+      encryptionKey: kmsKey,
       logGroupName: `/${props.subdomain}.${props.domain}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       retention: logs.RetentionDays.ONE_MONTH,
@@ -84,15 +83,16 @@ export class Service extends cdk.Stack {
 
     //
     // file system storage
-    const efs = new c3.efs.FileSystem(this, 'Efs', {
+    const fs = new efs.FileSystem(this, 'Efs', {
       vpc,
       securityGroup: sg,
       vpcSubnets: {subnetType: ec2.SubnetType.PRIVATE},
+      encrypted: true,
       kmsKey,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     })
-    efs.node.addDependency(requires)
-    services.add(efs)
+    fs.node.addDependency(requires)
+    services.add(fs)
 
     //
     // global cache
@@ -105,12 +105,14 @@ export class Service extends cdk.Stack {
       (new acm.DnsValidatedCertificate(this, 'Cert', { domainName: `*.${props.domain}`, hostedZone: zone })).certificateArn
 
     const nodes = compute.EC2(this, {
-      kmsKey, allowKmsCrypto: key.accessPolicy, secret,
+      kmsKey,
+      allowKmsCrypto: key.accessPolicy,
+      secret,
       vpc, sg, zone,
       topic,
       database: dbase.host,
       redis: redis.attrRedisEndpointAddress,
-      filesystem: efs.fileSystemId,
+      filesystem: fs.fileSystemId,
       tlsCertificate,
       ...props
     })

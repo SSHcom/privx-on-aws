@@ -86,7 +86,7 @@ export interface Database {
 // Secret vault(s)
 export interface Secret {
   // reference to encryption key
-  readonly kmsKey: kms.IAlias
+  readonly kmsKey: kms.IKey
 
   // database secrets
   readonly secret: vault.Secret

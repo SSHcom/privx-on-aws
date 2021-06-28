@@ -16,7 +16,6 @@
 import * as cdk from '@aws-cdk/core'
 import * as ec2 from '@aws-cdk/aws-ec2'
 import * as rds from '@aws-cdk/aws-rds'
-import * as c3 from '@ssh.com/c3'
 import * as T from './types'
 import * as net from './net'
 import * as incident from './incident'
@@ -25,6 +24,8 @@ import * as incident from './incident'
 export type DbProps = T.Secret & T.Config & T.Network & T.Observable
 
 type DbInstanceProps = T.Secret & T.Network & T.Database
+
+const postgreVersion = rds.PostgresEngineVersion.VER_12_3
 
 /*
 
@@ -78,18 +79,20 @@ export class Db extends cdk.Construct {
     name,
     secret,
   }: DbInstanceProps): rds.DatabaseInstance {
-    return new c3.rds.DatabaseInstance(this, 'Dbase', {
-      kmsKey,
-      engine: rds.DatabaseInstanceEngine.POSTGRES,
+    return new rds.DatabaseInstance(this, 'Dbase', {
+      storageEncrypted: true,
+      storageEncryptionKey: kmsKey,
+      engine: rds.DatabaseInstanceEngine.postgres({ version: postgreVersion }),
       instanceType: new ec2.InstanceType('t3.small'),
-  
+
       databaseName: name,
       deletionProtection: false,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
   
-      masterUserPassword: secret.secretValueFromJson('secret'),
-      masterUsername: name,
-  
+      credentials: {
+        username: name,
+        password: secret.secretValueFromJson('secret')
+      },
       multiAz: false,
       vpc,
       securityGroups: [sg],
@@ -106,19 +109,18 @@ export class Db extends cdk.Construct {
     snapshot,
   }: DbInstanceProps): rds.DatabaseInstance {
     return new rds.DatabaseInstanceFromSnapshot(this, `Dsnap-${tint}`, {
-      engine: rds.DatabaseInstanceEngine.POSTGRES,
+      engine: rds.DatabaseInstanceEngine.postgres({ version: postgreVersion }),
       instanceType: new ec2.InstanceType('t3.small'),
-  
+
       snapshotIdentifier: snapshot as string,
-      generateMasterUserPassword: false,
-  
+
       deletionProtection: false,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
-  
+
       multiAz: false,
       vpc,
       securityGroups: [sg],
-  
+
       backupRetention: cdk.Duration.days(30),
       deleteAutomatedBackups: false,
     })
