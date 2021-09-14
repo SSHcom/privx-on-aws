@@ -32,7 +32,6 @@ export const EC2 = (
     vpc,
     sg,
     database,
-    redis,
     filesystem,
     tlsCertificate,
     allowKmsCrypto,
@@ -61,10 +60,10 @@ export const EC2 = (
   nodes.addUserData(
     mount(filesystem),
     cloudwatchlogs(site),
-    bootstrap(scope, site, uniqueName, database, redis, secret, tlsCertificate),
+    bootstrap(scope, site, uniqueName, database, secret, tlsCertificate),
   )
   nodes.addSecurityGroup(sg)
-  cdk.Tag.add(nodes, 'domain', site)
+  cdk.Tags.of(nodes).add('domain', site)
 
   incident.fmap(incident.ServiceOverload(scope, nodes, 60), topic)
   incident.fmap(incident.ServiceInDebt(scope, nodes, 10), topic)
@@ -138,7 +137,6 @@ const bootstrap = (
   site: string,
   serviceName: string,
   db: string,
-  redis: string,
   secret: vault.Secret,
   tlsCertificate: string,
 ) => [
@@ -147,12 +145,12 @@ const bootstrap = (
   'yum install -y awscli jq',
   'mkdir -p /opt/privx/nginx',
   'ln -s /opt/privx/nginx /etc/',
-  'export VERSION=19.0-32_be53114d9',
+  'export VERSION=20.0-24_781838378',
   'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-${VERSION}.x86_64.rpm',
 
   'install() {',
   '  export PRIVX_DISABLE_SELINUX=1',
-  '  sed -i \'s/data_folder =.*/data_folder="\\/opt\\/privx\\/audit"/g\' /opt/privx/etc/new/shared-config.toml',
+  '  sed -i \'s/data_folder =.*/data_folder="\\/opt\\/privx\\/audit"/g\' /opt/privx/etc/settings-default-config.toml',
   // only required at 11.0
   // '  sed -i \'s/ID/ID_LIKE/g\' /opt/privx/scripts/px-issuer',
 
@@ -172,8 +170,7 @@ const bootstrap = (
   `  export PRIVX_DATABASE_USERNAME=${serviceName}`,
   `  export PRIVX_DATABASE_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${secret.secretArn} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
   '  export PRIVX_DATABASE_SSLMODE=require',
-  `  export PRIVX_REDIS_ADDRESS=${redis}`,
-  '  export PRIVX_REDIS_PORT=6379',
+  '  export PRIVX_NOTIFICATION_BACKEND=db',
   '  export PRIVX_KEYVAULT_PKCS11_ENABLE=0',
 
   '  export PRIVX_SUPERUSER=superuser',
@@ -188,13 +185,18 @@ const bootstrap = (
   'config() {',
   '  sed -i \'s/ID/ID_LIKE/g\' /opt/privx/scripts/px-issuer',
   '  export PRIVX_DISABLE_SELINUX=1',
+  '  export PRIVX_NOTIFICATION_BACKEND=db',
   '  cp /opt/privx/etc/privx-ca.crt /etc/pki/tls/certs/',
+  `  chown -R privx:privx /opt/privx/keyvault/`,
+  `  chown -R privx:privx /opt/privx/cert`,
+  `  chown -R privx:privx /var/log/privx`,
   '  if [[ `cat /opt/privx/.configured` == "${VERSION}" ]] ; then',
   '    mv -f /opt/privx/bin/migration-tool /opt/privx/bin/migration-tool_',
   '    touch /opt/privx/bin/migration-tool && chmod a+x /opt/privx/bin/migration-tool',
   '    /opt/privx/scripts/postinstall.sh',
   '    mv -f /opt/privx/bin/migration-tool_ /opt/privx/bin/migration-tool',
   '  else',
+  '    sed -i \'s/^type =.*/type = "db"/g\' /opt/privx/etc/shared-config.toml',
   '    /opt/privx/scripts/postinstall.sh',
   '  fi',
   '}',

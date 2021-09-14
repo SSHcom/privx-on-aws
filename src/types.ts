@@ -102,9 +102,6 @@ export interface Services {
   // database endpoint
   readonly database: string
 
-  // redis endpoint
-  readonly redis: string
-
   // file system endpoint
   readonly filesystem: string
 
