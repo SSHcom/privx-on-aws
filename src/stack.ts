@@ -23,7 +23,6 @@ import { AccessibleKmsKey } from './kms-with-access'
 import * as compute from './compute'
 import * as incident from './incident'
 import * as net from './net'
-import * as storage from './storage'
 import * as vault from './vault'
 import * as db from './db'
 import * as T from './types'
@@ -95,11 +94,6 @@ export class Service extends cdk.Stack {
     services.add(fs)
 
     //
-    // global cache
-    const redis = storage.Redis(this, vpc, sg)
-    services.add(redis)
-
-    //
     // compute
     const tlsCertificate = app.node.tryGetContext('cert') ||
       (new acm.DnsValidatedCertificate(this, 'Cert', { domainName: `*.${props.domain}`, hostedZone: zone })).certificateArn
@@ -111,7 +105,6 @@ export class Service extends cdk.Stack {
       vpc, sg, zone,
       topic,
       database: dbase.host,
-      redis: redis.attrRedisEndpointAddress,
       filesystem: fs.fileSystemId,
       tlsCertificate,
       ...props

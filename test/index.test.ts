@@ -27,8 +27,6 @@ const resources: string[] = [
   'AWS::EC2::EIP',
   'AWS::EC2::NatGateway',
   'AWS::RDS::DBInstance',
-  'AWS::ElastiCache::SubnetGroup',
-  'AWS::ElastiCache::CacheCluster',
   'AWS::EFS::FileSystem',
   'AWS::EFS::MountTarget',
   'AWS::SNS::Topic',
