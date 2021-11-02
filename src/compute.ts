@@ -139,7 +139,6 @@ const bootstrap = (
   db: string,
   secret: vault.Secret,
   tlsCertificate: string,
-  //https://product-repository.ssh.com/x86_64/PrivX/PrivX-21.0-31_554d72e1f.x86_64.rpm
 ) => [
   'amazon-linux-extras install epel',
   'yum -y update',
