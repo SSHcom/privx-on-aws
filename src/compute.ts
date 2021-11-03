@@ -145,7 +145,7 @@ const bootstrap = (
   'yum install -y awscli jq',
   'mkdir -p /opt/privx/nginx',
   'ln -s /opt/privx/nginx /etc/',
-  'export VERSION=20.0-24_781838378',
+  'export VERSION=21.0-31_554d72e1f',
   'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-${VERSION}.x86_64.rpm',
 
   'install() {',
@@ -177,6 +177,8 @@ const bootstrap = (
   `  export PRIVX_SUPERUSER_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${secret.secretArn} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
 
   `  sed -i '/privx_instance_name = ""/c\privx_instance_name = "${scope.node.tryGetContext('subdomain')}"' /opt/privx/etc/new/shared-config.toml`,
+  '  sed -i \'s/^use_fingerprint =.*/use_fingerprint = false/g\' /opt/privx/etc/new/oauth-shared-config.toml',
+  '  sed -i \'s/^strip_how_many_x_forwarded_for_client_ips =.*/strip_how_many_x_forwarded_for_client_ips = 1/g\' /opt/privx/etc/new/shared-config.toml',
   '  /opt/privx/scripts/postinstall.sh',
   `  aws acm get-certificate --certificate-arn ${tlsCertificate} | jq -r .CertificateChain > /opt/privx/etc/alb-trust.pem`,
   '  /opt/privx/scripts/init_nginx.sh update-trust /opt/privx/etc/alb-trust.pem',
@@ -197,6 +199,9 @@ const bootstrap = (
   '    mv -f /opt/privx/bin/migration-tool_ /opt/privx/bin/migration-tool',
   '  else',
   '    sed -i \'s/^type =.*/type = "db"/g\' /opt/privx/etc/shared-config.toml',
+  '    sed -i \'s/^use_fingerprint =.*/use_fingerprint = false/g\' /opt/privx/etc/new/oauth-shared-config.toml',
+  '    sed -i \'s/^strip_how_many_x_forwarded_for_client_ips =.*/strip_how_many_x_forwarded_for_client_ips = 1/g\' /opt/privx/etc/shared-config.toml',
+  '    sed -i \'s/^strip_how_many_x_forwarded_for_client_ips =.*/strip_how_many_x_forwarded_for_client_ips = 1/g\' /opt/privx/etc/new/shared-config.toml',
   '    /opt/privx/scripts/postinstall.sh',
   '  fi',
   '}',
