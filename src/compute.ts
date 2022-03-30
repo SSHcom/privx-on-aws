@@ -145,9 +145,8 @@ const bootstrap = (
   'yum install -y awscli jq',
   'mkdir -p /opt/privx/nginx',
   'ln -s /opt/privx/nginx /etc/',
-  'export VERSION=21.0-31_554d72e1f',
+  'export VERSION=22.1-63_3033421e1',
   'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-${VERSION}.x86_64.rpm',
-
   'install() {',
   '  export PRIVX_DISABLE_SELINUX=1',
   '  sed -i \'s/data_folder =.*/data_folder="\\/opt\\/privx\\/audit"/g\' /opt/privx/etc/settings-default-config.toml',

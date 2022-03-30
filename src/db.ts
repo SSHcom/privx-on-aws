@@ -25,7 +25,7 @@ export type DbProps = T.Secret & T.Config & T.Network & T.Observable
 
 type DbInstanceProps = T.Secret & T.Network & T.Database
 
-const postgreVersion = rds.PostgresEngineVersion.VER_12_3
+const postgreVersion = rds.PostgresEngineVersion.VER_13
 
 /*
 
