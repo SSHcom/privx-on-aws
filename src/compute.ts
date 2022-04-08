@@ -44,7 +44,7 @@ export const EC2 = (
 
   const nodes = new asg.AutoScalingGroup(scope, site, {
     desiredCapacity: 1,
-    instanceType: new ec2.InstanceType('t3.small'),
+    instanceType: new ec2.InstanceType('t3.large'),
     machineImage: new ec2.AmazonLinuxImage({
       generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
     }),
@@ -145,7 +145,7 @@ const bootstrap = (
   'yum install -y awscli jq',
   'mkdir -p /opt/privx/nginx',
   'ln -s /opt/privx/nginx /etc/',
-  'export VERSION=22.1-63_3033421e1',
+  'export VERSION=23.0-38_0228ac150',
   'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-${VERSION}.x86_64.rpm',
   'install() {',
   '  export PRIVX_DISABLE_SELINUX=1',
@@ -187,6 +187,8 @@ const bootstrap = (
   '  sed -i \'s/ID/ID_LIKE/g\' /opt/privx/scripts/px-issuer',
   '  export PRIVX_DISABLE_SELINUX=1',
   '  export PRIVX_NOTIFICATION_BACKEND=db',
+  '  mkdir -p /opt/privx/audit',
+  `  chown -R privx:privx /opt/privx/audit`,
   '  cp /opt/privx/etc/privx-ca.crt /etc/pki/tls/certs/',
   `  chown -R privx:privx /opt/privx/keyvault/`,
   `  chown -R privx:privx /opt/privx/cert`,
