@@ -13,18 +13,19 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
-import * as asg from '@aws-cdk/aws-autoscaling'
-import * as ec2 from '@aws-cdk/aws-ec2'
-import * as alb from '@aws-cdk/aws-elasticloadbalancingv2'
-import * as dns from '@aws-cdk/aws-route53'
-import * as target from '@aws-cdk/aws-route53-targets'
-import * as sns from '@aws-cdk/aws-sns'
-import * as cdk from '@aws-cdk/core'
+import * as cdk from 'aws-cdk-lib'
+import { Construct } from 'constructs'
+import * as asg from 'aws-cdk-lib/aws-autoscaling'
+import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import * as alb from 'aws-cdk-lib/aws-elasticloadbalancingv2'
+import * as dns from 'aws-cdk-lib/aws-route53'
+import * as target from 'aws-cdk-lib/aws-route53-targets'
+import * as sns from 'aws-cdk-lib/aws-sns'
 import * as incident from './incident'
 
 //
 //
-export const Vpc = (scope: cdk.Construct, cidr: string): ec2.Vpc => {
+export const Vpc = (scope: Construct, cidr: string): ec2.Vpc => {
   if (!cidr.startsWith('10.') || !cidr.endsWith('/16')) {
     throw new Error('Please use class A network in VPC CIDR = 10.x.x.x/16.')
   }
@@ -48,23 +49,23 @@ export const Vpc = (scope: cdk.Construct, cidr: string): ec2.Vpc => {
   )
 }
 
-const publicSubnet = (cidrMask: number, reserved: boolean = false): ec2.SubnetConfiguration => ({
+const publicSubnet = (cidrMask: number, reserved = false): ec2.SubnetConfiguration => ({
   cidrMask,
   name: 'Public',
   reserved,
   subnetType: ec2.SubnetType.PUBLIC,
 })
 
-const privateSubnet = (cidrMask: number, reserved: boolean = false): ec2.SubnetConfiguration => ({
+const privateSubnet = (cidrMask: number, reserved = false): ec2.SubnetConfiguration => ({
   cidrMask,
   name: 'Private',
   reserved,
-  subnetType: ec2.SubnetType.PRIVATE,
+  subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
 })
 
 //
 //
-export const Sg = (scope: cdk.Construct, vpc: ec2.IVpc): ec2.SecurityGroup => {
+export const Sg = (scope: Construct, vpc: ec2.IVpc): ec2.SecurityGroup => {
   const sg = new ec2.SecurityGroup(scope, 'StorageSg', { vpc })
   sg.connections.allowInternally(allow('RDS', 5432))
   // https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html
@@ -85,7 +86,7 @@ const allow = (service: string, port: number): ec2.Port => (
 //
 //
 export const PublicHttps = (
-  scope: cdk.Construct,
+  scope: Construct,
   vpc: ec2.IVpc,
   lb: alb.ApplicationLoadBalancer,
   site: string,
@@ -93,7 +94,7 @@ export const PublicHttps = (
   certificateArn: string
 ): alb.ApplicationListener => {
   const listener = lb.addListener(`Https`, {
-    certificateArns: [certificateArn],
+    certificates: [alb.ListenerCertificate.fromArn(certificateArn)],
     defaultTargetGroups: [ None(scope, vpc, 443) ],
     open: true,
     port: 443,
@@ -112,7 +113,7 @@ export const PublicHttps = (
 }
 
 export const PublicHttp = (
-  scope: cdk.Construct,
+  scope: Construct,
   vpc: ec2.IVpc,
   lb: alb.ApplicationLoadBalancer,
 ): alb.ApplicationListener => {
@@ -126,7 +127,7 @@ export const PublicHttp = (
   return listener
 }
 
-export const Lb = (scope: cdk.Construct, vpc: ec2.IVpc): alb.ApplicationLoadBalancer =>
+export const Lb = (scope: Construct, vpc: ec2.IVpc): alb.ApplicationLoadBalancer =>
   new alb.ApplicationLoadBalancer(scope, 'Lb',
     {
       internetFacing: true,
@@ -135,7 +136,7 @@ export const Lb = (scope: cdk.Construct, vpc: ec2.IVpc): alb.ApplicationLoadBala
     }
   )
 
-const None = (scope: cdk.Construct, vpc: ec2.IVpc, port: number): alb.ApplicationTargetGroup =>
+const None = (scope: Construct, vpc: ec2.IVpc, port: number): alb.ApplicationTargetGroup =>
   new alb.ApplicationTargetGroup(scope, `None${port}`, {
     port,
     targetType: alb.TargetType.INSTANCE,
@@ -143,7 +144,7 @@ const None = (scope: cdk.Construct, vpc: ec2.IVpc, port: number): alb.Applicatio
   })
 
 export const Endpoint = (
-  scope: cdk.Construct,
+  scope: Construct,
   vpc: ec2.IVpc,
   listener: alb.IApplicationListener,
   service: asg.AutoScalingGroup,
@@ -167,7 +168,9 @@ export const Endpoint = (
 
   const lb = new alb.ApplicationListenerRule(scope, 'EpHttps', {
     listener,
-    pathPattern: '/*',
+    conditions: [
+      alb.ListenerCondition.pathPatterns(['/*']),
+    ],
     priority: 1 + Math.floor(Math.random() * 998),
     targetGroups: [endpoint]
   })
@@ -179,18 +182,19 @@ export const Endpoint = (
 }
 
 export const RedirectEndpoint = (
-  scope: cdk.Construct,
+  scope: Construct,
   listener: alb.IApplicationListener,
 ): alb.ApplicationListenerRule => {
   const lb = new alb.ApplicationListenerRule(scope, 'EpRedirect', {
     listener,
-    pathPattern: '/*',
+    conditions: [
+      alb.ListenerCondition.pathPatterns(['/*']),
+    ],
     priority: Math.floor(Math.random() * 999),
-    redirectResponse: {
-        statusCode: 'HTTP_301',
-        port: '443',
-        protocol: 'HTTPS',
-      }
+    action: alb.ListenerAction.redirect({
+      port: '443',
+      protocol: 'HTTPS',
+    }),
   })
 
   return lb
@@ -203,7 +207,7 @@ export interface CNameProps extends dns.CnameRecordProps {
 }
 
 export const CName = (
-  scope: cdk.Construct,
+  scope: Construct,
   id: string,
   props: CNameProps,
 ): dns.CnameRecord => {

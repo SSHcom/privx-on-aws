@@ -13,11 +13,11 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
-import * as vault from '@aws-cdk/aws-secretsmanager'
-import * as kms from '@aws-cdk/aws-kms'
-import * as cdk from '@aws-cdk/core'
+import { Construct } from 'constructs'
+import * as vault from 'aws-cdk-lib/aws-secretsmanager'
+import * as kms from 'aws-cdk-lib/aws-kms'
 
-export const Secret = (scope: cdk.Construct, name: string, encryptionKey: kms.IKey): vault.Secret =>
+export const Secret = (scope: Construct, name: string, encryptionKey: kms.IKey): vault.Secret =>
   new vault.Secret(scope, `Vault-${name}`,
     {
       encryptionKey,

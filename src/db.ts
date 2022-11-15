@@ -13,9 +13,10 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
-import * as cdk from '@aws-cdk/core'
-import * as ec2 from '@aws-cdk/aws-ec2'
-import * as rds from '@aws-cdk/aws-rds'
+import * as cdk from 'aws-cdk-lib'
+import { Construct } from 'constructs'
+import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import * as rds from 'aws-cdk-lib/aws-rds'
 import * as T from './types'
 import * as net from './net'
 import * as incident from './incident'
@@ -36,10 +37,10 @@ Db supports non-destructive blue/green deployments of database layer from PrivX
 
 The component continues to run two instances of database unless some is destroyed.
 */
-export class Db extends cdk.Construct {
+export class Db extends Construct {
   public readonly host: string
 
-  constructor(scope: cdk.Construct, id: string, props: DbProps) {
+  constructor(scope: Construct, id: string, props: DbProps) {
     super(scope, id)
     const {
       snapG, snapB,
