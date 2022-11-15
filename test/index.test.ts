@@ -13,8 +13,8 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
-import { expect, haveResource } from '@aws-cdk/assert'
-import * as cdk from '@aws-cdk/core'
+import { Template } from 'aws-cdk-lib/assertions';
+import * as cdk from 'aws-cdk-lib'
 import { Service } from '../src/stack'
 
 const resources: string[] = [
@@ -55,7 +55,8 @@ const spec = {
 test('stack spawns required resources', () => {
   const app = new cdk.App({ context: { domain: 'example.com' }})
   const stack = new Service(app, 'test-stack', spec)
-  resources.forEach(x => expect(stack).to(haveResource(x)))
+  const template = Template.fromStack(stack)
+  resources.forEach(x => template.hasResource(x, {}))
 })
 
 test('stack spawns required resources with custom certificate', () => {
@@ -64,11 +65,12 @@ test('stack spawns required resources with custom certificate', () => {
     cert: 'arn:aws:acm:us-east-1:000000000000:certificate/12345678-1234-1234-1234-123456789012',
     ...spec,
   })
+  const template = Template.fromStack(stack)
   resources.filter(x => (
     [
       'AWS::Lambda::Function',
     ].indexOf(x) == -1
-  )).forEach(x => expect(stack).to(haveResource(x)))
+  )).forEach(x => template.hasResource(x, {}))
 })
 
 test('stack spawns: blue default, green snapshot', () => {
@@ -78,7 +80,8 @@ test('stack spawns: blue default, green snapshot', () => {
     snapG: 'arn:aws:rds:us-east-1:000000000000:snapshot:a',
     ...spec,
   })
-  resources.forEach(x => expect(stack).to(haveResource(x)))
+  const template = Template.fromStack(stack)
+  resources.forEach(x => template.hasResource(x, {}))
 })
 
 test('stack spawns: blue snapshot, green snapshot', () => {
@@ -88,5 +91,6 @@ test('stack spawns: blue snapshot, green snapshot', () => {
     snapG: 'arn:aws:rds:us-east-1:000000000000:snapshot:a',
     ...spec,
   })
-  resources.forEach(x => expect(stack).to(haveResource(x)))
+  const template = Template.fromStack(stack)
+  resources.forEach(x => template.hasResource(x, {}))
 })

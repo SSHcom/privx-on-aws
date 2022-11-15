@@ -13,12 +13,12 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
-import * as ec2 from '@aws-cdk/aws-ec2'
-import * as sns from '@aws-cdk/aws-sns'
-import * as kms from '@aws-cdk/aws-kms'
-import * as iam from '@aws-cdk/aws-iam'
-import * as vault from '@aws-cdk/aws-secretsmanager'
-import * as dns from '@aws-cdk/aws-route53'
+import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import * as sns from 'aws-cdk-lib/aws-sns'
+import * as kms from 'aws-cdk-lib/aws-kms'
+import * as iam from 'aws-cdk-lib/aws-iam'
+import * as vault from 'aws-cdk-lib/aws-secretsmanager'
+import * as dns from 'aws-cdk-lib/aws-route53'
 
 //
 // Config defines configurable features during the deployment

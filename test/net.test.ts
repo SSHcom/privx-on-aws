@@ -13,8 +13,8 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
-import { expect as stackExpect, haveResource } from '@aws-cdk/assert'
-import * as cdk from '@aws-cdk/core'
+import { Template } from 'aws-cdk-lib/assertions';
+import * as cdk from 'aws-cdk-lib'
 import * as net from '../src/net'
 
 test('configure vpc', () => {
@@ -25,7 +25,8 @@ test('configure vpc', () => {
   const elements: string[] = [
     'AWS::EC2::VPC',
   ]
-  elements.forEach(x => stackExpect(stack).to(haveResource(x)))
+  const template = Template.fromStack(stack)
+  elements.forEach(x => template.hasResource(x, {}))
 })
 
 test('invalid vpc configure', () => {

@@ -1,6 +1,7 @@
-import * as cdk from '@aws-cdk/core'
-import * as iam from '@aws-cdk/aws-iam'
-import * as kms from '@aws-cdk/aws-kms'
+import * as cdk from 'aws-cdk-lib'
+import { Construct } from 'constructs'
+import * as iam from 'aws-cdk-lib/aws-iam'
+import * as kms from 'aws-cdk-lib/aws-kms'
 
 export class AccessibleKmsKey {
   public readonly key: kms.IKey
@@ -8,13 +9,12 @@ export class AccessibleKmsKey {
   public readonly encryptPolicy: iam.IManagedPolicy
   public readonly decryptPolicy: iam.IManagedPolicy
 
-  constructor(scope: cdk.Construct, alias: string) {
+  constructor(scope: Construct, alias: string) {
 
     this.key = new kms.Key(scope, 'PrivxKey', {
       alias,
       enableKeyRotation: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      trustAccountIdentities: true,
     })
 
     this.accessPolicy = new iam.ManagedPolicy(scope, 'KmsKeyFullAccess', {

@@ -13,12 +13,13 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
-import * as acm from '@aws-cdk/aws-certificatemanager'
-import * as logs from '@aws-cdk/aws-logs'
-import * as dns from '@aws-cdk/aws-route53'
-import * as ec2 from '@aws-cdk/aws-ec2'
-import * as efs from '@aws-cdk/aws-efs'
-import * as cdk from '@aws-cdk/core'
+import * as cdk from 'aws-cdk-lib'
+import { DependencyGroup } from 'constructs'
+import * as acm from 'aws-cdk-lib/aws-certificatemanager'
+import * as logs from 'aws-cdk-lib/aws-logs'
+import * as dns from 'aws-cdk-lib/aws-route53'
+import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import * as efs from 'aws-cdk-lib/aws-efs'
 import { AccessibleKmsKey } from './kms-with-access'
 import * as compute from './compute'
 import * as incident from './incident'
@@ -38,7 +39,7 @@ export class Service extends cdk.Stack {
 
     //
     // core
-    const requires = new cdk.ConcreteDependable()
+    const requires = new DependencyGroup()
     const vpc = net.Vpc(this, props.cidr)
     const sg = net.Sg(this, vpc)
     const zone = dns.HostedZone.fromLookup(this, 'HostedZone', { domainName: props.domain })
@@ -59,7 +60,7 @@ export class Service extends cdk.Stack {
 
     //
     //
-    const services = new cdk.ConcreteDependable()
+    const services = new DependencyGroup()
     const lg = new logs.LogGroup(this, 'Logs', {
       encryptionKey: kmsKey,
       logGroupName: `/${props.subdomain}.${props.domain}`,
@@ -85,7 +86,7 @@ export class Service extends cdk.Stack {
     const fs = new efs.FileSystem(this, 'Efs', {
       vpc,
       securityGroup: sg,
-      vpcSubnets: {subnetType: ec2.SubnetType.PRIVATE},
+      vpcSubnets: {subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS},
       encrypted: true,
       kmsKey,
       removalPolicy: cdk.RemovalPolicy.DESTROY,

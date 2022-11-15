@@ -13,17 +13,18 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
-import * as asg from '@aws-cdk/aws-autoscaling'
-import * as cloudwatch from '@aws-cdk/aws-cloudwatch'
-import * as action from '@aws-cdk/aws-cloudwatch-actions'
-import * as alb from '@aws-cdk/aws-elasticloadbalancingv2'
-import * as rds from '@aws-cdk/aws-rds'
-import * as sns from '@aws-cdk/aws-sns'
-import * as cdk from '@aws-cdk/core'
+import * as cdk from 'aws-cdk-lib'
+import { Construct } from 'constructs'
+import * as asg from 'aws-cdk-lib/aws-autoscaling'
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch'
+import * as action from 'aws-cdk-lib/aws-cloudwatch-actions'
+import * as alb from 'aws-cdk-lib/aws-elasticloadbalancingv2'
+import * as rds from 'aws-cdk-lib/aws-rds'
+import * as sns from 'aws-cdk-lib/aws-sns'
 
 //
 //
-export const Channel = (scope: cdk.Construct, email: string): sns.Topic => {
+export const Channel = (scope: Construct, email: string): sns.Topic => {
   const topic = new sns.Topic(scope, 'Topic', {})
   new sns.Subscription(scope, 'Sub', {
     endpoint: email,
@@ -45,7 +46,7 @@ export const fmap = (alarm: cloudwatch.Alarm, topic: sns.ITopic): cloudwatch.Ala
 //
 // ----------------------------------------------------------------------------
 
-export const HighAvailability = (scope: cdk.Construct, target: alb.ApplicationTargetGroup, threshold: number): cloudwatch.Alarm =>
+export const HighAvailability = (scope: Construct, target: alb.ApplicationTargetGroup, threshold: number): cloudwatch.Alarm =>
   new cloudwatch.Alarm(scope, 'HighAvailability', {
     actionsEnabled: true,
     alarmDescription: [
@@ -56,20 +57,20 @@ export const HighAvailability = (scope: cdk.Construct, target: alb.ApplicationTa
     datapointsToAlarm: 1,
     evaluationPeriods: 1,
     metric: new cloudwatch.Metric({
-      dimensions: {
+      dimensionsMap: {
         LoadBalancer: target.firstLoadBalancerFullName,
         TargetGroup: target.targetGroupFullName,
       },
       metricName: 'HealthyHostCount',
       namespace: 'AWS/ApplicationELB',
       statistic: 'Minimum',
+      period: cdk.Duration.minutes(5),
     }),
-    period: cdk.Duration.minutes(5),
     threshold,
     treatMissingData: cloudwatch.TreatMissingData.BREACHING,
   })
 
-export const ServiceAvailability = (scope: cdk.Construct, target: alb.ApplicationTargetGroup, threshold: number): cloudwatch.Alarm =>
+export const ServiceAvailability = (scope: Construct, target: alb.ApplicationTargetGroup, threshold: number): cloudwatch.Alarm =>
   new cloudwatch.Alarm(scope, 'ServiceAvailability', {
     alarmDescription: [
       'Number of Service Unrecoverable Failures is higher than safety threshold.',
@@ -79,15 +80,15 @@ export const ServiceAvailability = (scope: cdk.Construct, target: alb.Applicatio
     datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
-      dimensions: {
+      dimensionsMap: {
         LoadBalancer: target.firstLoadBalancerFullName,
         TargetGroup: target.targetGroupFullName,
       },
       metricName: 'HTTPCode_Target_5XX_Count',
       namespace: 'AWS/ApplicationELB',
       statistic: 'Sum',
+      period: cdk.Duration.seconds(60),
     }),
-    period: cdk.Duration.seconds(60),
     threshold,
     treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
   })
@@ -100,7 +101,7 @@ export const ServiceAvailability = (scope: cdk.Construct, target: alb.Applicatio
 
 //
 //
-export const ServiceOverload = (scope: cdk.Construct, nodes: asg.AutoScalingGroup, threshold: number): cloudwatch.Alarm =>
+export const ServiceOverload = (scope: Construct, nodes: asg.AutoScalingGroup, threshold: number): cloudwatch.Alarm =>
   new cloudwatch.Alarm(scope, 'ServiceOverload', {
     alarmDescription: [
       'Service CPU utilization is above safety threshold.',
@@ -110,19 +111,19 @@ export const ServiceOverload = (scope: cdk.Construct, nodes: asg.AutoScalingGrou
     datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
-      dimensions: { AutoScalingGroupName: nodes.autoScalingGroupName },
+      dimensionsMap: { AutoScalingGroupName: nodes.autoScalingGroupName },
       metricName: 'CPUUtilization',
       namespace: 'AWS/EC2',
-      statistic: 'p90'
+      statistic: 'p90',
+      period: cdk.Duration.seconds(60),
     }),
-    period: cdk.Duration.seconds(60),
     threshold,
     treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
   })
 
 //
 //
-export const ServiceInDebt = (scope: cdk.Construct, nodes: asg.AutoScalingGroup, threshold: number): cloudwatch.Alarm =>
+export const ServiceInDebt = (scope: Construct, nodes: asg.AutoScalingGroup, threshold: number): cloudwatch.Alarm =>
   new cloudwatch.Alarm(scope, 'ServiceInDebt', {
     alarmDescription: [
       'Service is running out of CPU credits.',
@@ -132,12 +133,12 @@ export const ServiceInDebt = (scope: cdk.Construct, nodes: asg.AutoScalingGroup,
     datapointsToAlarm: 2,
     evaluationPeriods: 2,
     metric: new cloudwatch.Metric({
-      dimensions: { AutoScalingGroupName: nodes.autoScalingGroupName },
+      dimensionsMap: { AutoScalingGroupName: nodes.autoScalingGroupName },
       metricName: 'CPUCreditBalance',
       namespace: 'AWS/EC2',
-      statistic: 'Minimum'
+      statistic: 'Minimum',
+      period: cdk.Duration.minutes(5),
     }),
-    period: cdk.Duration.minutes(5),
     threshold,
     treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
   })
@@ -150,7 +151,7 @@ export const ServiceInDebt = (scope: cdk.Construct, nodes: asg.AutoScalingGroup,
 
 //
 //
-export const DbOverload = (scope: cdk.Construct, db: rds.DatabaseInstance, threshold: number): cloudwatch.Alarm => 
+export const DbOverload = (scope: Construct, db: rds.DatabaseInstance, threshold: number): cloudwatch.Alarm => 
   new cloudwatch.Alarm(scope, 'DbOverload', {
     alarmDescription: [
       'Database CPU utilization is above safety threshold.',
@@ -160,19 +161,19 @@ export const DbOverload = (scope: cdk.Construct, db: rds.DatabaseInstance, thres
     datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
-      dimensions: { DBInstanceIdentifier: db.instanceIdentifier },
+      dimensionsMap: { DBInstanceIdentifier: db.instanceIdentifier },
       metricName: 'CPUUtilization',
       namespace: 'AWS/RDS',
-      statistic: 'p90'
+      statistic: 'p90',
+      period: cdk.Duration.seconds(60),
     }),
-    period: cdk.Duration.seconds(60),
     threshold,
     treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
   })
 
 //
 //
-export const DbInDebt = (scope: cdk.Construct, db: rds.DatabaseInstance, threshold: number): cloudwatch.Alarm =>
+export const DbInDebt = (scope: Construct, db: rds.DatabaseInstance, threshold: number): cloudwatch.Alarm =>
   new cloudwatch.Alarm(scope, 'DbInDebt', {
     alarmDescription: [
       'Database is running out of CPU credits.',
@@ -182,19 +183,19 @@ export const DbInDebt = (scope: cdk.Construct, db: rds.DatabaseInstance, thresho
     datapointsToAlarm: 2,
     evaluationPeriods: 2,
     metric: new cloudwatch.Metric({
-      dimensions: { DBInstanceIdentifier: db.instanceIdentifier },
+      dimensionsMap: { DBInstanceIdentifier: db.instanceIdentifier },
       metricName: 'CPUCreditBalance',
       namespace: 'AWS/RDS',
-      statistic: 'Minimum'
+      statistic: 'Minimum',
+      period: cdk.Duration.minutes(5),
     }),
-    period: cdk.Duration.minutes(5),
     threshold,
     treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
   })
 
 //
 //
-export const DbOutOfMem = (scope: cdk.Construct, db: rds.DatabaseInstance, threshold: number): cloudwatch.Alarm =>
+export const DbOutOfMem = (scope: Construct, db: rds.DatabaseInstance, threshold: number): cloudwatch.Alarm =>
   new cloudwatch.Alarm(scope, 'DbOutOfMem', {
     alarmDescription: [
       'Database is running out of free memory.',
@@ -204,19 +205,19 @@ export const DbOutOfMem = (scope: cdk.Construct, db: rds.DatabaseInstance, thres
     datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
-      dimensions: { DBInstanceIdentifier: db.instanceIdentifier },
+      dimensionsMap: { DBInstanceIdentifier: db.instanceIdentifier },
       metricName: 'FreeableMemory',
       namespace: 'AWS/RDS',
-      statistic: 'p90'
+      statistic: 'p90',
+      period: cdk.Duration.seconds(60),
     }),
-    period: cdk.Duration.seconds(60),
     threshold,
     treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
   })
 
 //
 //
-export const DbOutOfDisk = (scope: cdk.Construct, db: rds.DatabaseInstance, threshold: number): cloudwatch.Alarm =>
+export const DbOutOfDisk = (scope: Construct, db: rds.DatabaseInstance, threshold: number): cloudwatch.Alarm =>
   new cloudwatch.Alarm(scope, 'DbOutOfDisk', {
     alarmDescription: [
       'Database is running out of free disk space.',
@@ -226,19 +227,19 @@ export const DbOutOfDisk = (scope: cdk.Construct, db: rds.DatabaseInstance, thre
     datapointsToAlarm: 4,
     evaluationPeriods: 4,
     metric: new cloudwatch.Metric({
-      dimensions: { DBInstanceIdentifier: db.instanceIdentifier },
+      dimensionsMap: { DBInstanceIdentifier: db.instanceIdentifier },
       metricName: 'FreeStorageSpace',
       namespace: 'AWS/RDS',
-      statistic: 'p90'
+      statistic: 'p90',
+      period: cdk.Duration.seconds(60),
     }),
-    period: cdk.Duration.seconds(60),
     threshold,
     treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
   })
 
 //
 //
-export const DbStorageInDebt = (scope: cdk.Construct, db: rds.DatabaseInstance, threshold: number): cloudwatch.Alarm =>
+export const DbStorageInDebt = (scope: Construct, db: rds.DatabaseInstance, threshold: number): cloudwatch.Alarm =>
   new cloudwatch.Alarm(scope, 'DbStorageInDebt', {
     alarmDescription: [
       'Database Storage is running out of IO credits.',
@@ -248,12 +249,12 @@ export const DbStorageInDebt = (scope: cdk.Construct, db: rds.DatabaseInstance, 
     datapointsToAlarm: 2,
     evaluationPeriods: 2,
     metric: new cloudwatch.Metric({
-      dimensions: { DBInstanceIdentifier: db.instanceIdentifier },
+      dimensionsMap: { DBInstanceIdentifier: db.instanceIdentifier },
       metricName: 'BurstBalance',
       namespace: 'AWS/RDS',
-      statistic: 'Minimum'
+      statistic: 'Minimum',
+      period: cdk.Duration.minutes(5),
     }),
-    period: cdk.Duration.minutes(5),
     threshold,
     treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
   })

@@ -13,18 +13,21 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
-import * as asg from '@aws-cdk/aws-autoscaling'
-import * as ec2 from '@aws-cdk/aws-ec2'
-import * as iam from '@aws-cdk/aws-iam'
-import * as vault from '@aws-cdk/aws-secretsmanager'
-import * as cdk from '@aws-cdk/core'
+import * as cdk from 'aws-cdk-lib'
+import { Construct } from 'constructs'
+import * as asg from 'aws-cdk-lib/aws-autoscaling'
+import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import * as iam from 'aws-cdk-lib/aws-iam'
+import * as vault from 'aws-cdk-lib/aws-secretsmanager'
 import * as incident from './incident'
 import * as T from './types'
+
+/* eslint-disable no-useless-escape */
 
 export type ComputeProps = T.Secret & T.AccessPolicy & T.Config & T.Network & T.Observable & T.Services
 
 export const EC2 = (
-  scope: cdk.Construct,
+  scope: Construct,
   {
     uniqueName,
     subdomain,
@@ -72,7 +75,7 @@ export const EC2 = (
 }
 
 const Role = (
-  scope: cdk.Construct,
+  scope: Construct,
   secret: vault.Secret,
   site: string,
   tlsCertificate: string,
@@ -132,8 +135,10 @@ const cloudwatchlogs = (site: string) => [
   'systemctl  enable awslogsd',
 ].join('\n')
 
+// https://product-repository.ssh.com/x86_64/PrivX/PrivX-26.0-51_11f066296.x86_64.rpm
+
 const bootstrap = (
-  scope: cdk.Construct,
+  scope: Construct,
   site: string,
   serviceName: string,
   db: string,
@@ -145,7 +150,7 @@ const bootstrap = (
   'yum install -y awscli jq',
   'mkdir -p /opt/privx/nginx',
   'ln -s /opt/privx/nginx /etc/',
-  'export VERSION=23.0-38_0228ac150',
+  'export VERSION=26.0-51_11f066296',
   'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-${VERSION}.x86_64.rpm',
   'install() {',
   '  export PRIVX_DISABLE_SELINUX=1',
