@@ -1,5 +1,5 @@
 //
-//   Copyright 2019 SSH Communications Security Corp., All Rights Reserved
+//   Copyright 2019-2024 SSH Communications Security Corp., All Rights Reserved
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -150,7 +150,7 @@ const bootstrap = (
   'yum install -y awscli jq',
   'mkdir -p /opt/privx/nginx',
   'ln -s /opt/privx/nginx /etc/',
-  'export VERSION=26.0-51_11f066296',
+  'export VERSION=33.0-50_626e61063c',
   'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-${VERSION}.x86_64.rpm',
   'install() {',
   '  export PRIVX_DISABLE_SELINUX=1',
