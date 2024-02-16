@@ -32,11 +32,11 @@ export const Vpc = (scope: Construct, cidr: string): ec2.Vpc => {
 
   return new ec2.Vpc(scope, 'Vpc',
     {
-      cidr,
+      ipAddresses: ec2.IpAddresses.cidr(cidr),
       defaultInstanceTenancy: ec2.DefaultInstanceTenancy.DEFAULT,
       enableDnsHostnames: true,
       enableDnsSupport: true,
-
+ 
       maxAzs: 2,
       natGateways: 1,
       subnetConfiguration: [
@@ -70,7 +70,6 @@ export const Sg = (scope: Construct, vpc: ec2.IVpc): ec2.SecurityGroup => {
   sg.connections.allowInternally(allow('RDS', 5432))
   // https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html
   sg.connections.allowInternally(allow('EFS', 2049))
-  sg.connections.allowInternally(allow('REDIS', 6379))
   return sg
 }
 
