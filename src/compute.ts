@@ -45,24 +45,34 @@ export const EC2 = (
   const site = `${subdomain}.${domain}`
   const role = Role(scope, secret, site, tlsCertificate, allowKmsCrypto)
 
+  const keyPair = ec2.KeyPair.fromKeyPairName(scope, 'KeyPair', scope.node.tryGetContext('sshkey')) || undefined;
+
+  // Rocky Linux 8.10 official images
+  const amiMap = {
+    'us-east-1': 'ami-0d2ef88ec245e386c',
+    'us-west-1': 'ami-0f6a73c434dbc977b',
+    'eu-west-1': 'ami-00093be166fba1121',
+    'eu-central-1': 'ami-070ab28f40f34c740',
+    'eu-north-1': 'ami-02399437a6927ddbe'
+  };
+
+  const baseImageAmi = ec2.MachineImage.genericLinux(amiMap)
+
   const nodes = new asg.AutoScalingGroup(scope, site, {
-    desiredCapacity: 1,
     instanceType: new ec2.InstanceType('t3.large'),
-    machineImage: new ec2.AmazonLinuxImage({
-      generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
-    }),
+    machineImage: baseImageAmi,
     maxCapacity: 1,
-    minCapacity: 0,
+    minCapacity: 1,
     role,
     vpc,
     associatePublicIpAddress: true,
     vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
-    keyName: scope.node.tryGetContext('sshkey') || undefined,
-    healthCheck: asg.HealthCheck.elb({grace: cdk.Duration.minutes(15)}),
+    keyPair: keyPair,
+    healthCheck: asg.HealthCheck.elb({grace: cdk.Duration.minutes(45)}),
   })
   nodes.addUserData(
     mount(filesystem),
-    cloudwatchlogs(site),
+//    cloudwatchlogs(site),  // disabled for now
     bootstrap(scope, site, uniqueName, database, secret, tlsCertificate),
   )
   nodes.addSecurityGroup(sg)
@@ -127,17 +137,30 @@ const mount = (filesystem: string) => [
   `echo -e "$EFS:/ \t\t /opt/privx \t nfs \t defaults \t 0 \t 0" | tee -a /etc/fstab`,
 ].join('\n')
 
-const cloudwatchlogs = (site: string) => [
-  'yum install -y awslogs',
-  `sed -i \'s/region =.*/region = ${cdk.Aws.REGION}/g\' /etc/awslogs/awscli.conf`,
-  `sed -i \'s/log_group_name =.*/log_group_name = \\/${site}/g\' /etc/awslogs/awslogs.conf`,
-  'service awslogsd start',
-  'systemctl  enable awslogsd',
-].join('\n')
+// const cloudwatchlogs = (site: string) => [
+//  'yum install -y awslogs',
+//  `sed -i \'s/region =.*/region = ${cdk.Aws.REGION}/g\' /etc/awslogs/awscli.conf`,
+//  `sed -i \'s/log_group_name =.*/log_group_name = \\/${site}/g\' /etc/awslogs/awslogs.conf`,
+//  'service awslogsd start',
+//  'systemctl enable awslogsd',
+//].join('\n')
 
-// https://product-repository.ssh.com/x86_64/PrivX/PrivX-26.0-51_11f066296.x86_64.rpm
+// Using release
+// https://product-repository.ssh.com/rhel8/x86_64/PrivX/PrivX-35.2-171_be6ef5c63a.rhel8.x86_64.rpm
+// For version compability, see https://privx.docs.ssh.com/docs/setting-up-privx-components
 
-const bootstrap = (
+// PrivX files are installed on an EFS mount.
+// For production HA environments, it is sufficient to mount only the /opt/privx/audit directory to a shared drive;
+// the rest of the files can be stored locally.
+// In this example, we mount the entire /opt/privx directory to EFS.
+//
+// An alternative approach would be to move the files to a local drive and only keep the audit directory mounted in EFS.
+// In this latter use case, an instance snapshot must be used to ensure that the files generated during installation
+// are identical across all PrivX nodes. This would also allow faster server startups, if dynamic autoscaling is in use.
+// See https://privx.docs.ssh.com/docs/deploying-privx-to-amazon-web-services
+// https://privx.docs.ssh.com/docs/privx-high-availability-deployment
+
+  const bootstrap = (
   scope: Construct,
   site: string,
   serviceName: string,
@@ -145,18 +168,32 @@ const bootstrap = (
   secret: vault.Secret,
   tlsCertificate: string,
 ) => [
-  'amazon-linux-extras install epel',
+  'yum install -y epel-release',
   'yum -y update',
-  'yum install -y awscli jq',
+  'yum install -y firewalld',
+  'yum install -y jq awscli',
   'mkdir -p /opt/privx/nginx',
+  'dnf module enable -y postgresql:13',
+  'yum install -y postgresql',
   'ln -s /opt/privx/nginx /etc/',
-  'export VERSION=33.0-50_626e61063c',
-  'yum install -y https://product-repository.ssh.com/x86_64/PrivX/PrivX-${VERSION}.x86_64.rpm',
+
+  // Specify PrivX version
+  'export VERSION=35.2-171_be6ef5c63a',
+
+  // SELinux: Allow nginx to access nfs
+  'setsebool -P httpd_use_nfs 1',
+
+  // Set SELinux to permissive mode in this example to avoid issues with files located in EFS drive.
+  // This setting won't persist after a reboot. In production environments, you should create a valid SELinux security policy.
+  // See "ausearch --raw | grep denied" for more details.
+  'setenforce 0', 
+
+// Install PrivX without automatically running postinstall, we'll do that later after modifying config files:
+  'SKIP_POSTINSTALL=1 yum install -y https://product-repository.ssh.com/rhel8/x86_64/PrivX/PrivX-${VERSION}.rhel8.x86_64.rpm',
   'install() {',
+  '  echo Starting new installation',
   '  export PRIVX_DISABLE_SELINUX=1',
   '  sed -i \'s/data_folder =.*/data_folder="\\/opt\\/privx\\/audit"/g\' /opt/privx/etc/settings-default-config.toml',
-  // only required at 11.0
-  // '  sed -i \'s/ID/ID_LIKE/g\' /opt/privx/scripts/px-issuer',
 
   '  export PRIVX_NTP_SERVER=pool.ntp.org',
   `  export AWS_DEFAULT_REGION=${cdk.Aws.REGION}`,
@@ -176,24 +213,26 @@ const bootstrap = (
   '  export PRIVX_DATABASE_SSLMODE=require',
   '  export PRIVX_NOTIFICATION_BACKEND=db',
   '  export PRIVX_KEYVAULT_PKCS11_ENABLE=0',
+  '  export PRIVX_NUM_TRUSTED_LB=1',
 
   '  export PRIVX_SUPERUSER=superuser',
   `  export PRIVX_SUPERUSER_PASSWORD=\`aws secretsmanager get-secret-value --secret-id ${secret.secretArn} --region ${cdk.Aws.REGION} | jq -r '.SecretString | fromjson | .secret'\``,
 
   `  sed -i '/privx_instance_name = ""/c\privx_instance_name = "${scope.node.tryGetContext('subdomain')}"' /opt/privx/etc/new/shared-config.toml`,
   '  sed -i \'s/^use_fingerprint =.*/use_fingerprint = false/g\' /opt/privx/etc/new/oauth-shared-config.toml',
-  '  sed -i \'s/^strip_how_many_x_forwarded_for_client_ips =.*/strip_how_many_x_forwarded_for_client_ips = 1/g\' /opt/privx/etc/new/shared-config.toml',
   '  mkdir -p /opt/privx/audit',
-  `  chown -R privx:privx /opt/privx/audit`,
+  '  chown -R privx:privx /opt/privx/audit',
   '  /opt/privx/scripts/postinstall.sh',
   `  aws acm get-certificate --certificate-arn ${tlsCertificate} | jq -r .CertificateChain > /opt/privx/etc/alb-trust.pem`,
   '  /opt/privx/scripts/init_nginx.sh update-trust /opt/privx/etc/alb-trust.pem',
   '}',
 
   'config() {',
+  '  echo Existing installation found',
   '  sed -i \'s/ID/ID_LIKE/g\' /opt/privx/scripts/px-issuer',
   '  export PRIVX_DISABLE_SELINUX=1',
   '  export PRIVX_NOTIFICATION_BACKEND=db',
+  '  export PRIVX_NUM_TRUSTED_LB=1',
   '  mkdir -p /opt/privx/audit',
   `  chown -R privx:privx /opt/privx/audit`,
   '  cp /opt/privx/etc/privx-ca.crt /etc/pki/tls/certs/',
@@ -208,8 +247,6 @@ const bootstrap = (
   '  else',
   '    sed -i \'s/^type =.*/type = "db"/g\' /opt/privx/etc/shared-config.toml',
   '    sed -i \'s/^use_fingerprint =.*/use_fingerprint = false/g\' /opt/privx/etc/new/oauth-shared-config.toml',
-  '    sed -i \'s/^strip_how_many_x_forwarded_for_client_ips =.*/strip_how_many_x_forwarded_for_client_ips = 1/g\' /opt/privx/etc/shared-config.toml',
-  '    sed -i \'s/^strip_how_many_x_forwarded_for_client_ips =.*/strip_how_many_x_forwarded_for_client_ips = 1/g\' /opt/privx/etc/new/shared-config.toml',
   '    /opt/privx/scripts/postinstall.sh',
   '  fi',
   '}',

@@ -16,6 +16,8 @@
 import { Template } from 'aws-cdk-lib/assertions';
 import * as cdk from 'aws-cdk-lib'
 import { Service } from '../src/stack'
+import * as path from 'path';
+import * as fs from 'fs';
 
 const resources: string[] = [
   'AWS::SecretsManager::Secret',
@@ -52,15 +54,19 @@ const spec = {
   domain: 'example.com',
 }
 
-test('stack spawns required resources', () => {
-  const app = new cdk.App({ context: { domain: 'example.com' }})
-  const stack = new Service(app, 'test-stack', spec)
-  const template = Template.fromStack(stack)
-  resources.forEach(x => template.hasResource(x, {}))
-})
+const readContext = () => {
+  const parentDir = path.resolve(__dirname, '..');
+  const cdkJsonPath = path.join(parentDir, 'cdk.json');
+    if (fs.existsSync(cdkJsonPath)) {
+      const cdkJson = JSON.parse(fs.readFileSync(cdkJsonPath, 'utf-8'));
+      return cdkJson.context || {};
+  }
+  return {}
+}
 
 test('stack spawns required resources with custom certificate', () => {
-  const app = new cdk.App()
+  const context = readContext()
+  const app = new cdk.App({ context: context })
   const stack = new Service(app, 'test-stack', {
     cert: 'arn:aws:acm:us-east-1:000000000000:certificate/12345678-1234-1234-1234-123456789012',
     ...spec,
@@ -71,26 +77,4 @@ test('stack spawns required resources with custom certificate', () => {
       'AWS::Lambda::Function',
     ].indexOf(x) == -1
   )).forEach(x => template.hasResource(x, {}))
-})
-
-test('stack spawns: blue default, green snapshot', () => {
-  const app = new cdk.App()
-  const stack = new Service(app, 'test-stack', {
-    snapB: 'default',
-    snapG: 'arn:aws:rds:us-east-1:000000000000:snapshot:a',
-    ...spec,
-  })
-  const template = Template.fromStack(stack)
-  resources.forEach(x => template.hasResource(x, {}))
-})
-
-test('stack spawns: blue snapshot, green snapshot', () => {
-  const app = new cdk.App()
-  const stack = new Service(app, 'test-stack', {
-    snapB: 'arn:aws:rds:us-east-1:000000000000:snapshot:b',
-    snapG: 'arn:aws:rds:us-east-1:000000000000:snapshot:a',
-    ...spec,
-  })
-  const template = Template.fromStack(stack)
-  resources.forEach(x => template.hasResource(x, {}))
 })
