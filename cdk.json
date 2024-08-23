@@ -1,4 +1,12 @@
 {
   "app": "ts-node src/index",
-  "requireApproval": "never"
+  "requireApproval": "never",
+  "context": {
+    "@aws-cdk/aws-ec2:launchTemplateDefaultUserData": true,
+    "@aws-cdk/core:newStyleStackSynthesis": true,
+    "@aws-cdk/aws-ec2:uniqueImdsv2TemplateName": true,
+    "@aws-cdk/aws-autoscaling:generateLaunchTemplateInsteadOfLaunchConfig": true,
+    "@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver": true,
+    "@aws-cdk/aws-iam:minimizePolicies": true
+  }
 }

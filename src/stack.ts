@@ -81,7 +81,6 @@ export class Service extends cdk.Stack {
     dbase.node.addDependency(requires)
     services.add(dbase)
 
-    //
     // file system storage
     const fs = new efs.FileSystem(this, 'Efs', {
       vpc,
@@ -96,8 +95,14 @@ export class Service extends cdk.Stack {
 
     //
     // compute
+    //const tlsCertificate = app.node.tryGetContext('cert') ||
+      //(new acm.DnsValidatedCertificate(this, 'Cert', { domainName: `*.${props.domain}`, hostedZone: zone })).certificateArn
+
     const tlsCertificate = app.node.tryGetContext('cert') ||
-      (new acm.DnsValidatedCertificate(this, 'Cert', { domainName: `*.${props.domain}`, hostedZone: zone })).certificateArn
+      (new acm.Certificate(this, 'Cert', { 
+          domainName: `*.${props.domain}`, 
+          validation: acm.CertificateValidation.fromDns(zone) 
+    })).certificateArn;
 
     const nodes = compute.EC2(this, {
       kmsKey,

@@ -26,7 +26,7 @@ export type DbProps = T.Secret & T.Config & T.Network & T.Observable
 
 type DbInstanceProps = T.Secret & T.Network & T.Database
 
-const postgreVersion = rds.PostgresEngineVersion.VER_13
+const postgreVersion = rds.PostgresEngineVersion.VER_16
 
 /*
 
@@ -84,7 +84,12 @@ export class Db extends Construct {
       storageEncrypted: true,
       storageEncryptionKey: kmsKey,
       engine: rds.DatabaseInstanceEngine.postgres({ version: postgreVersion }),
-      instanceType: new ec2.InstanceType('t3.small'),
+      // db.r5d.large has 16 GB of memory and supports max ~900 connections, which is good for small or moderately sized HA deployments.
+      // For large production env installations, 32 GB of memory or more is recommended.
+      //
+      // Amazon defined max_conn = LEAST({DBInstanceClassMemory/9531392}, 5000)
+      // https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.MaxConnections
+      instanceType: new ec2.InstanceType('r5d.large'),
 
       databaseName: name,
       deletionProtection: false,
@@ -111,7 +116,7 @@ export class Db extends Construct {
   }: DbInstanceProps): rds.DatabaseInstance {
     return new rds.DatabaseInstanceFromSnapshot(this, `Dsnap-${tint}`, {
       engine: rds.DatabaseInstanceEngine.postgres({ version: postgreVersion }),
-      instanceType: new ec2.InstanceType('t3.small'),
+      instanceType: new ec2.InstanceType('r5d.large'),
 
       snapshotIdentifier: snapshot as string,
 
